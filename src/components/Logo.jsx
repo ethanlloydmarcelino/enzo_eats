@@ -1,11 +1,13 @@
 import { Pressable, StyleSheet, Text, View } from 'react-native'
 import { useThemeStore } from '../store/useThemeStore'
 import { useColors } from '../theme'
+import { useTranslations } from '../translations'
 
 export const Logo = ({ compact = false, inverse = false, onPress }) => {
   const colors = useColors(useThemeStore((state) => state.theme))
+  const { t } = useTranslations()
   return (
-    <Pressable accessibilityLabel="Enzo Eats home" onPress={onPress} style={styles.logo}>
+    <Pressable accessibilityLabel={t('logoHome')} onPress={onPress} style={styles.logo}>
       <View style={[styles.mark, { backgroundColor: colors.primary }]}>
         <Text style={[styles.markText, { color: colors.cream }]}>E</Text>
       </View>

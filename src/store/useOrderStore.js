@@ -1,11 +1,9 @@
 import { create } from 'zustand'
 
 export const useOrderStore = create((set) => ({
-  orderType: 'Pickup',
   cartOpen: false,
   cart: [],
   favorites: [],
-  setOrderType: (orderType) => set({ orderType }),
   setCartOpen: (cartOpen) => set({ cartOpen }),
   toggleFavorite: (id) =>
     set((state) => ({

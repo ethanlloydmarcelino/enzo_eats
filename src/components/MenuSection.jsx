@@ -15,32 +15,36 @@ import { categories, fetchMenu } from '../data/menu'
 import { useThemeStore } from '../store/useThemeStore'
 import { useColors } from '../theme'
 import { MenuCard } from './MenuCard'
+import { useTranslations } from '../translations'
 
 export const MenuSection = ({ category, setCategory, search, setSearch, searchRef }) => {
   const { data = [], isPending } = useQuery({ queryKey: ['menu'], queryFn: fetchMenu })
   const colors = useColors(useThemeStore((state) => state.theme))
+  const { language, t } = useTranslations()
   const { width } = useWindowDimensions()
   const cardWidth = width >= 1080 ? '23.5%' : width >= 680 ? '48.5%' : '100%'
   const visible = useMemo(
     () =>
       data.filter((item) => {
-        const matchesCategory = category === 'All' || item.category === category
+        const matchesCategory = category === 'all' || item.category === category
         return (
           matchesCategory &&
-          `${item.name} ${item.description}`.toLowerCase().includes(search.toLowerCase())
+          `${item.name[language]} ${item.description[language]}`
+            .toLowerCase()
+            .includes(search.toLowerCase())
         )
       }),
-    [data, category, search],
+    [data, category, language, search],
   )
 
   return (
     <View style={[styles.section, { backgroundColor: colors.background }]}>
       <View style={[styles.headingRow, width >= 700 && styles.headingRowWide]}>
         <View>
-          <Text style={[styles.eyebrow, { color: colors.primary }]}>MADE FRESH DAILY</Text>
-          <Text style={[styles.heading, { color: colors.foreground }]}>Popular dishes</Text>
+          <Text style={[styles.eyebrow, { color: colors.primary }]}>{t('freshDaily')}</Text>
+          <Text style={[styles.heading, { color: colors.foreground }]}>{t('popularDishes')}</Text>
           <Text style={[styles.subheading, { color: colors.mutedForeground }]}>
-            Four favorites. No decision fatigue.
+            {t('menuSubtitle')}
           </Text>
         </View>
         <View style={[styles.search, { backgroundColor: colors.card, borderColor: colors.border }]}>
@@ -49,7 +53,7 @@ export const MenuSection = ({ category, setCategory, search, setSearch, searchRe
             ref={searchRef}
             value={search}
             onChangeText={setSearch}
-            placeholder="Search menu"
+            placeholder={t('searchMenu')}
             placeholderTextColor={colors.mutedForeground}
             style={[styles.input, { color: colors.foreground }]}
             returnKeyType="search"
@@ -70,7 +74,7 @@ export const MenuSection = ({ category, setCategory, search, setSearch, searchRe
               style={[styles.category, { backgroundColor: active ? colors.primary : colors.muted }]}
             >
               <Text style={[styles.categoryText, { color: active ? '#fff' : colors.foreground }]}>
-                {name}
+                {t(name)}
               </Text>
             </Pressable>
           )
@@ -86,14 +90,14 @@ export const MenuSection = ({ category, setCategory, search, setSearch, searchRe
         </View>
       ) : (
         <View style={[styles.empty, { borderColor: colors.border }]}>
-          <Text style={[styles.emptyTitle, { color: colors.foreground }]}>No dishes found</Text>
+          <Text style={[styles.emptyTitle, { color: colors.foreground }]}>{t('noDishes')}</Text>
           <Pressable
             onPress={() => {
               setSearch('')
-              setCategory('All')
+              setCategory('all')
             }}
           >
-            <Text style={[styles.clear, { color: colors.primary }]}>Clear filters</Text>
+            <Text style={[styles.clear, { color: colors.primary }]}>{t('clearFilters')}</Text>
           </Pressable>
         </View>
       )}

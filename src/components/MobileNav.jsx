@@ -3,20 +3,22 @@ import { Pressable, StyleSheet, Text, View, useWindowDimensions } from 'react-na
 import { useOrderStore } from '../store/useOrderStore'
 import { useThemeStore } from '../store/useThemeStore'
 import { useColors } from '../theme'
+import { useTranslations } from '../translations'
 
 export const MobileNav = ({ onHome, onMenu, onSearch }) => {
   const setCartOpen = useOrderStore((state) => state.setCartOpen)
   const cart = useOrderStore((state) => state.cart)
   const colors = useColors(useThemeStore((state) => state.theme))
+  const { t } = useTranslations()
   const { width } = useWindowDimensions()
   if (width >= 760) return null
   const count = cart.reduce((sum, item) => sum + item.quantity, 0)
   const items = [
-    { label: 'Home', Icon: Home, action: onHome },
-    { label: 'Menu', Icon: Utensils, action: onMenu },
-    { label: 'Search', Icon: Search, action: onSearch },
+    { label: t('home'), Icon: Home, action: onHome },
+    { label: t('menu'), Icon: Utensils, action: onMenu },
+    { label: t('search'), Icon: Search, action: onSearch },
     {
-      label: `Bag${count ? ` (${count})` : ''}`,
+      label: `${t('bag')}${count ? ` (${count})` : ''}`,
       Icon: ShoppingBag,
       action: () => setCartOpen(true),
     },

@@ -2,40 +2,39 @@ import { Clock3, Leaf, Sparkles } from 'lucide-react-native'
 import { StyleSheet, Text, View, useWindowDimensions } from 'react-native'
 import { useThemeStore } from '../store/useThemeStore'
 import { useColors } from '../theme'
+import { useTranslations } from '../translations'
 
 const values = [
   {
     icon: Leaf,
-    title: 'Quality ingredients',
-    text: 'Thoughtfully sourced and prepared fresh every day.',
+    title: 'qualityTitle',
+    text: 'qualityText',
   },
   {
     icon: Clock3,
-    title: 'Ready when you are',
-    text: 'Reliable pickup and delivery without the long wait.',
+    title: 'readyTitle',
+    text: 'readyText',
   },
   {
     icon: Sparkles,
-    title: 'Smarter recommendations',
-    text: 'Helpful suggestions based on what you actually enjoy.',
+    title: 'smartTitle',
+    text: 'smartText',
   },
 ]
 
 export const Story = () => {
   const colors = useColors(useThemeStore((state) => state.theme))
+  const { t } = useTranslations()
   const { width } = useWindowDimensions()
   const wide = width >= 760
   return (
     <View style={[styles.section, { backgroundColor: colors.lilac, borderColor: colors.border }]}>
       <View style={styles.inner}>
         <View style={styles.intro}>
-          <Text style={[styles.eyebrow, { color: colors.primary }]}>THE ENZO STANDARD</Text>
-          <Text style={[styles.title, { color: colors.foreground }]}>
-            Good food should be simple.
-          </Text>
+          <Text style={[styles.eyebrow, { color: colors.primary }]}>{t('storyEyebrow')}</Text>
+          <Text style={[styles.title, { color: colors.foreground }]}>{t('storyTitle')}</Text>
           <Text style={[styles.subtitle, { color: colors.mutedForeground }]}>
-            A focused personal ordering platform with clear choices, quick checkout, and helpful
-            recommendations.
+            {t('storySubtitle')}
           </Text>
         </View>
         <View style={[styles.cards, wide && styles.cardsWide]}>
@@ -49,9 +48,11 @@ export const Story = () => {
                 <View style={[styles.icon, { backgroundColor: `${colors.primary}1f` }]}>
                   <Icon size={21} color={colors.primary} />
                 </View>
-                <Text style={[styles.cardTitle, { color: colors.foreground }]}>{value.title}</Text>
+                <Text style={[styles.cardTitle, { color: colors.foreground }]}>
+                  {t(value.title)}
+                </Text>
                 <Text style={[styles.cardText, { color: colors.mutedForeground }]}>
-                  {value.text}
+                  {t(value.text)}
                 </Text>
               </View>
             )

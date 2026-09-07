@@ -13,10 +13,12 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useOrderStore } from '../store/useOrderStore'
 import { useThemeStore } from '../store/useThemeStore'
 import { useColors } from '../theme'
+import { useTranslations } from '../translations'
 
 export const CartDrawer = () => {
-  const { cart, cartOpen, orderType, setCartOpen, changeQuantity, clearCart } = useOrderStore()
+  const { cart, cartOpen, setCartOpen, changeQuantity, clearCart } = useOrderStore()
   const colors = useColors(useThemeStore((state) => state.theme))
+  const { language, t } = useTranslations()
   const insets = useSafeAreaInsets()
   const { width } = useWindowDimensions()
   const subtotal = cart.reduce((sum, item) => sum + item.price * item.quantity, 0)
@@ -33,7 +35,7 @@ export const CartDrawer = () => {
         <Pressable
           style={styles.dismissArea}
           onPress={() => setCartOpen(false)}
-          accessibilityLabel="Close cart"
+          accessibilityLabel={t('closeCart')}
         />
         <View
           style={[
@@ -44,9 +46,9 @@ export const CartDrawer = () => {
         >
           <View style={[styles.header, { borderBottomColor: colors.border }]}>
             <View>
-              <Text style={[styles.title, { color: colors.foreground }]}>Your order</Text>
+              <Text style={[styles.title, { color: colors.foreground }]}>{t('yourOrder')}</Text>
               <Text style={[styles.description, { color: colors.mutedForeground }]}>
-                {orderType} · ready in 20–30 min
+                {t('pickupReady')}
               </Text>
             </View>
             <Pressable
@@ -59,17 +61,15 @@ export const CartDrawer = () => {
           {!cart.length ? (
             <View style={styles.empty}>
               <ShoppingBag size={46} strokeWidth={1.4} color={colors.mutedForeground} />
-              <Text style={[styles.emptyTitle, { color: colors.foreground }]}>
-                Your bag is empty
-              </Text>
+              <Text style={[styles.emptyTitle, { color: colors.foreground }]}>{t('emptyBag')}</Text>
               <Text style={[styles.emptyText, { color: colors.mutedForeground }]}>
-                Add a dish to get started.
+                {t('emptyBagText')}
               </Text>
               <Pressable
                 onPress={() => setCartOpen(false)}
                 style={[styles.primary, { backgroundColor: colors.primary }]}
               >
-                <Text style={styles.primaryText}>Browse menu</Text>
+                <Text style={styles.primaryText}>{t('browseMenu')}</Text>
               </Pressable>
             </View>
           ) : (
@@ -81,18 +81,18 @@ export const CartDrawer = () => {
                     <View style={styles.itemCopy}>
                       <View style={styles.itemTitleRow}>
                         <Text style={[styles.itemName, { color: colors.foreground }]}>
-                          {item.name}
+                          {item.name[language]}
                         </Text>
                         <Text style={[styles.itemPrice, { color: colors.foreground }]}>
                           ${item.price * item.quantity}
                         </Text>
                       </View>
                       <Text style={[styles.itemCategory, { color: colors.mutedForeground }]}>
-                        {item.category}
+                        {t(item.category)}
                       </Text>
                       <View style={[styles.quantity, { borderColor: colors.border }]}>
                         <Pressable
-                          accessibilityLabel={`Remove one ${item.name}`}
+                          accessibilityLabel={t('removeOne', { name: item.name[language] })}
                           onPress={() => changeQuantity(item.id, -1)}
                           style={styles.quantityButton}
                         >
@@ -102,7 +102,7 @@ export const CartDrawer = () => {
                           {item.quantity}
                         </Text>
                         <Pressable
-                          accessibilityLabel={`Add one ${item.name}`}
+                          accessibilityLabel={t('addOne', { name: item.name[language] })}
                           onPress={() => changeQuantity(item.id, 1)}
                           style={styles.quantityButton}
                         >
@@ -115,24 +115,26 @@ export const CartDrawer = () => {
               </ScrollView>
               <View style={[styles.summary, { borderTopColor: colors.border }]}>
                 <View style={styles.summaryRow}>
-                  <Text style={{ color: colors.mutedForeground }}>Subtotal</Text>
+                  <Text style={{ color: colors.mutedForeground }}>{t('subtotal')}</Text>
                   <Text style={{ color: colors.mutedForeground }}>${subtotal.toFixed(2)}</Text>
                 </View>
                 <View style={styles.summaryRow}>
-                  <Text style={{ color: colors.mutedForeground }}>Service fee</Text>
+                  <Text style={{ color: colors.mutedForeground }}>{t('serviceFee')}</Text>
                   <Text style={{ color: colors.mutedForeground }}>${service.toFixed(2)}</Text>
                 </View>
                 <View style={[styles.summaryRow, styles.totalRow]}>
-                  <Text style={[styles.total, { color: colors.foreground }]}>Total</Text>
+                  <Text style={[styles.total, { color: colors.foreground }]}>{t('total')}</Text>
                   <Text style={[styles.total, { color: colors.foreground }]}>
                     ${(subtotal + service).toFixed(2)}
                   </Text>
                 </View>
                 <Pressable style={[styles.checkout, { backgroundColor: colors.primary }]}>
-                  <Text style={styles.checkoutText}>Continue to checkout · {orderType}</Text>
+                  <Text style={styles.checkoutText}>{t('pickupCheckout')}</Text>
                 </Pressable>
                 <Pressable onPress={clearCart}>
-                  <Text style={[styles.clear, { color: colors.mutedForeground }]}>Clear bag</Text>
+                  <Text style={[styles.clear, { color: colors.mutedForeground }]}>
+                    {t('clearBag')}
+                  </Text>
                 </Pressable>
               </View>
             </>

@@ -4,6 +4,7 @@ import { Image, Pressable, StyleSheet, Text, View } from 'react-native'
 import { useOrderStore } from '../store/useOrderStore'
 import { useThemeStore } from '../store/useThemeStore'
 import { useColors } from '../theme'
+import { useTranslations } from '../translations'
 
 export const MenuCard = ({ item, width }) => {
   const [frame, setFrame] = useState({ width: 0, height: 0 })
@@ -11,7 +12,9 @@ export const MenuCard = ({ item, width }) => {
   const toggleFavorite = useOrderStore((state) => state.toggleFavorite)
   const addToCart = useOrderStore((state) => state.addToCart)
   const colors = useColors(useThemeStore((state) => state.theme))
+  const { language, t } = useTranslations()
   const favorite = favorites.includes(item.id)
+  const itemName = item.name[language]
 
   return (
     <View
@@ -36,11 +39,11 @@ export const MenuCard = ({ item, width }) => {
         )}
         {item.badge && (
           <View style={[styles.badge, { backgroundColor: colors.card }]}>
-            <Text style={[styles.badgeText, { color: colors.foreground }]}>{item.badge}</Text>
+            <Text style={[styles.badgeText, { color: colors.foreground }]}>{t(item.badge)}</Text>
           </View>
         )}
         <Pressable
-          accessibilityLabel={`${favorite ? 'Remove' : 'Add'} ${item.name} ${favorite ? 'from' : 'to'} favorites`}
+          accessibilityLabel={t(favorite ? 'removeFavorite' : 'addFavorite', { name: itemName })}
           onPress={() => toggleFavorite(item.id)}
           style={[styles.favorite, { backgroundColor: colors.card }]}
         >
@@ -55,14 +58,14 @@ export const MenuCard = ({ item, width }) => {
         <View style={styles.titleRow}>
           <View style={styles.titleCopy}>
             <Text style={[styles.category, { color: colors.mutedForeground }]}>
-              {item.category}
+              {t(item.category)}
             </Text>
-            <Text style={[styles.name, { color: colors.foreground }]}>{item.name}</Text>
+            <Text style={[styles.name, { color: colors.foreground }]}>{itemName}</Text>
           </View>
           <Text style={[styles.price, { color: colors.foreground }]}>${item.price}</Text>
         </View>
         <Text style={[styles.description, { color: colors.mutedForeground }]}>
-          {item.description}
+          {item.description[language]}
         </Text>
         <View style={styles.bottom}>
           <View style={styles.rating}>
@@ -74,7 +77,7 @@ export const MenuCard = ({ item, width }) => {
             style={[styles.add, { backgroundColor: colors.primary }]}
           >
             <Plus size={15} color="#fff" />
-            <Text style={styles.addText}>Add</Text>
+            <Text style={styles.addText}>{t('add')}</Text>
           </Pressable>
         </View>
       </View>

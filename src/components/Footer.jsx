@@ -2,6 +2,7 @@ import { Headphones } from 'lucide-react-native'
 import { StyleSheet, Text, View, useWindowDimensions } from 'react-native'
 import Svg, { Circle, Rect } from 'react-native-svg'
 import { Logo } from './Logo'
+import { useTranslations } from '../translations'
 
 const InstagramIcon = ({ color = '#777', size = 17 }) => (
   <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
@@ -13,23 +14,24 @@ const InstagramIcon = ({ color = '#777', size = 17 }) => (
 
 export const Footer = () => {
   const { width } = useWindowDimensions()
+  const { t } = useTranslations()
   return (
     <View style={styles.footer}>
       <View style={[styles.columns, width >= 720 && styles.columnsWide]}>
         <View style={styles.column}>
           <Logo inverse />
-          <Text style={styles.copy}>Simple online ordering for your favorite rice meals.</Text>
+          <Text style={styles.copy}>{t('footerCopy')}</Text>
         </View>
         <View style={styles.column}>
-          <Text style={styles.heading}>Ordering</Text>
-          <Text style={styles.line}>Pickup or delivery</Text>
-          <Text style={styles.line}>Available every day</Text>
+          <Text style={styles.heading}>{t('ordering')}</Text>
+          <Text style={styles.line}>{t('pickupOrdering')}</Text>
+          <Text style={styles.line}>{t('availableDaily')}</Text>
         </View>
         <View style={styles.column}>
-          <Text style={styles.heading}>Support</Text>
+          <Text style={styles.heading}>{t('support')}</Text>
           <View style={styles.support}>
             <Headphones size={17} color="#999" />
-            <Text style={styles.supportText}>Contact Enzo Eats about your order</Text>
+            <Text style={styles.supportText}>{t('contactSupport')}</Text>
           </View>
         </View>
       </View>

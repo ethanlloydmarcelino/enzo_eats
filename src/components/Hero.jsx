@@ -1,15 +1,14 @@
 import { ArrowRight, Clock3, MapPin, Sparkles, Star } from 'lucide-react-native'
 import { Image, Pressable, StyleSheet, Text, View, useWindowDimensions } from 'react-native'
-import { useOrderStore } from '../store/useOrderStore'
 import { useThemeStore } from '../store/useThemeStore'
 import { useColors } from '../theme'
+import { useTranslations } from '../translations'
 
 const heroImage = require('../../assets/images/filipino-rice-meals.png')
 
 export const Hero = ({ onOrder }) => {
-  const orderType = useOrderStore((state) => state.orderType)
-  const setOrderType = useOrderStore((state) => state.setOrderType)
   const colors = useColors(useThemeStore((state) => state.theme))
+  const { t } = useTranslations()
   const { width } = useWindowDimensions()
   const wide = width >= 900
 
@@ -19,50 +18,37 @@ export const Hero = ({ onOrder }) => {
         <View style={[styles.copy, wide && styles.copyWide]}>
           <View style={[styles.badge, { backgroundColor: `${colors.primary}1f` }]}>
             <Sparkles size={13} color={colors.primary} />
-            <Text style={[styles.badgeText, { color: colors.primary }]}>Personalized for you</Text>
+            <Text style={[styles.badgeText, { color: colors.primary }]}>{t('personalized')}</Text>
           </View>
           <Text style={[styles.title, wide && styles.titleWide, { color: colors.foreground }]}>
-            Your meal.{`\n`}
-            <Text style={{ color: colors.primary }}>Ready to order.</Text>
+            {t('heroLead')}
+            {`\n`}
+            <Text style={{ color: colors.primary }}>{t('heroAccent')}</Text>
           </Text>
           <Text style={[styles.subtitle, { color: colors.mutedForeground }]}>
-            Four satisfying rice meals, one simple online ordering experience.
+            {t('heroSubtitle')}
           </Text>
           <View style={[styles.orderBox, { backgroundColor: colors.card }]}>
-            <View style={[styles.tabs, { backgroundColor: colors.muted }]}>
-              {['Pickup', 'Delivery'].map((type) => (
-                <Pressable
-                  key={type}
-                  onPress={() => setOrderType(type)}
-                  style={[styles.tab, orderType === type && { backgroundColor: colors.card }]}
-                >
-                  <Text
-                    style={[
-                      styles.tabText,
-                      { color: orderType === type ? colors.foreground : colors.mutedForeground },
-                    ]}
-                  >
-                    {type}
-                  </Text>
-                </Pressable>
-              ))}
-            </View>
             <Pressable
               onPress={onOrder}
               style={[styles.orderButton, { backgroundColor: colors.primary }]}
             >
-              <Text style={styles.orderText}>Order now</Text>
+              <Text style={styles.orderText}>{t('orderPickup')}</Text>
               <ArrowRight size={18} color="#fff" />
             </Pressable>
           </View>
           <View style={styles.meta}>
             <View style={styles.metaItem}>
               <Clock3 size={16} color={colors.mutedForeground} />
-              <Text style={[styles.metaText, { color: colors.mutedForeground }]}>20–30 min</Text>
+              <Text style={[styles.metaText, { color: colors.mutedForeground }]}>
+                {t('minutes')}
+              </Text>
             </View>
             <View style={styles.metaItem}>
               <MapPin size={16} color={colors.mutedForeground} />
-              <Text style={[styles.metaText, { color: colors.mutedForeground }]}>2.4 miles</Text>
+              <Text style={[styles.metaText, { color: colors.mutedForeground }]}>
+                {t('distance')}
+              </Text>
             </View>
             <View style={styles.metaItem}>
               <Star size={16} color={colors.coral} fill={colors.coral} />
@@ -75,14 +61,14 @@ export const Hero = ({ onOrder }) => {
             source={heroImage}
             resizeMode="cover"
             style={styles.image}
-            accessibilityLabel="Shomai, chicken, beef, and sisig rice meals"
+            accessibilityLabel={t('mealImageLabel')}
           />
           <View style={[styles.recommendation, { backgroundColor: colors.card }]}>
             <Text style={[styles.recommendationLabel, { color: colors.primary }]}>
-              Recommended for you
+              {t('recommended')}
             </Text>
             <Text style={[styles.recommendationName, { color: colors.foreground }]}>
-              Shomai and Rice
+              {t('featuredMeal')}
             </Text>
           </View>
         </View>
@@ -119,9 +105,6 @@ const styles = StyleSheet.create({
     gap: 8,
     boxShadow: '0 6px 16px rgba(0, 0, 0, 0.10)',
   },
-  tabs: { flexDirection: 'row', borderRadius: 10, padding: 3 },
-  tab: { flex: 1, paddingVertical: 11, borderRadius: 8, alignItems: 'center' },
-  tabText: { fontSize: 14, fontWeight: '700' },
   orderButton: {
     minHeight: 46,
     borderRadius: 11,

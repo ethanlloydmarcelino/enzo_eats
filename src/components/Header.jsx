@@ -3,13 +3,16 @@ import { Pressable, StyleSheet, Text, View, useWindowDimensions } from 'react-na
 import { Logo } from './Logo'
 import { useOrderStore } from '../store/useOrderStore'
 import { ThemeToggle } from './ThemeToggle'
+import { LanguageToggle } from './LanguageToggle'
 import { useThemeStore } from '../store/useThemeStore'
 import { useColors } from '../theme'
+import { useTranslations } from '../translations'
 
 export const Header = ({ onMenu, onSearch }) => {
   const cart = useOrderStore((state) => state.cart)
   const setCartOpen = useOrderStore((state) => state.setCartOpen)
   const colors = useColors(useThemeStore((state) => state.theme))
+  const { t } = useTranslations()
   const { width } = useWindowDimensions()
   const count = cart.reduce((sum, item) => sum + item.quantity, 0)
   return (
@@ -24,16 +27,18 @@ export const Header = ({ onMenu, onSearch }) => {
         {width >= 760 && (
           <View accessibilityRole="tablist" style={styles.nav}>
             <Pressable onPress={onMenu}>
-              <Text style={[styles.navText, { color: colors.mutedForeground }]}>Menu</Text>
+              <Text style={[styles.navText, { color: colors.mutedForeground }]}>{t('menu')}</Text>
             </Pressable>
-            <Text style={[styles.navText, { color: colors.mutedForeground }]}>How it works</Text>
-            <Text style={[styles.navText, { color: colors.mutedForeground }]}>Support</Text>
+            <Text style={[styles.navText, { color: colors.mutedForeground }]}>
+              {t('howItWorks')}
+            </Text>
+            <Text style={[styles.navText, { color: colors.mutedForeground }]}>{t('support')}</Text>
           </View>
         )}
         <View style={styles.actions}>
           {width >= 520 && (
             <Pressable
-              accessibilityLabel="Search menu"
+              accessibilityLabel={t('searchMenu')}
               onPress={onSearch}
               style={styles.iconButton}
             >
@@ -41,12 +46,15 @@ export const Header = ({ onMenu, onSearch }) => {
             </Pressable>
           )}
           <ThemeToggle />
+          <LanguageToggle />
           <Pressable
             onPress={() => setCartOpen(true)}
             style={[styles.bag, { backgroundColor: colors.ink }]}
           >
             <ShoppingBag size={18} color={colors.cream} />
-            {width >= 420 && <Text style={[styles.bagText, { color: colors.cream }]}>My bag</Text>}
+            {width >= 520 && (
+              <Text style={[styles.bagText, { color: colors.cream }]}>{t('myBag')}</Text>
+            )}
             {count > 0 && (
               <View style={[styles.count, { backgroundColor: colors.primary }]}>
                 <Text style={styles.countText}>{count}</Text>

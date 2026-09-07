@@ -2,7 +2,7 @@
 
 A cross-platform meal-ordering app built with React Native, Expo, Metro, Zustand, TanStack React Query, and Lucide icons. It runs on Android, iOS, and the web from one codebase.
 
-The app includes responsive native layouts, menu search and filtering, favorites, pickup/delivery selection, a cart modal, and a persistent light/dark theme.
+The app includes responsive native layouts, menu search and filtering, favorites, pickup ordering, a cart modal, persistent English/Tagalog language selection, and a persistent light/dark theme.
 
 ## Run locally
 
@@ -23,7 +23,7 @@ npx expo run:android
 
 ## Amplify handoff
 
-The current menu is returned by `src/data/menu.js`. Replace `fetchMenu()` with an Amplify Data client call; the React Query consumer in `src/components/MenuSection.jsx` can remain unchanged. Cart, favorites, and pickup/delivery state live in `src/store/useOrderStore.js` and can later be hydrated from an authenticated Amplify user.
+The current menu is returned by `src/data/menu.js`. Replace `fetchMenu()` with an Amplify Data client call; the React Query consumer in `src/components/MenuSection.jsx` can remain unchanged. Cart and favorites state live in `src/store/useOrderStore.js` and can later be hydrated from an authenticated Amplify user.
 
 The checkout button is intentionally frontend-only until payment and order creation are connected.
 
