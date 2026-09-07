@@ -1,0 +1,103 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    color-scheme: light;
+    --background: 0 0% 100%;
+    --foreground: 0 0% 8%;
+    --card: 0 0% 100%;
+    --card-foreground: 0 0% 8%;
+    --primary: 151 72% 38%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 0 0% 95%;
+    --secondary-foreground: 0 0% 8%;
+    --muted: 0 0% 95%;
+    --muted-foreground: 0 0% 42%;
+    --border: 0 0% 88%;
+    --input: 0 0% 78%;
+    --ring: 151 72% 38%;
+    --lime: 151 72% 38%;
+    --cobalt: 151 72% 32%;
+    --coral: 34 96% 50%;
+    --lilac: 148 42% 93%;
+    --ink: 0 0% 8%;
+    --cream: 0 0% 100%;
+  }
+  .dark {
+    color-scheme: dark;
+    --background: 0 0% 6%;
+    --foreground: 0 0% 96%;
+    --card: 0 0% 11%;
+    --card-foreground: 0 0% 96%;
+    --primary: 151 67% 45%;
+    --primary-foreground: 0 0% 3%;
+    --secondary: 0 0% 16%;
+    --secondary-foreground: 0 0% 96%;
+    --muted: 0 0% 16%;
+    --muted-foreground: 0 0% 65%;
+    --border: 0 0% 22%;
+    --input: 0 0% 32%;
+    --ring: 151 67% 45%;
+    --lime: 151 67% 45%;
+    --cobalt: 151 67% 45%;
+    --coral: 34 96% 55%;
+    --lilac: 151 25% 14%;
+    --ink: 0 0% 96%;
+    --cream: 0 0% 6%;
+  }
+  * {
+    @apply border-border;
+  }
+  html {
+    scroll-behavior: smooth;
+  }
+  body {
+    @apply m-0 bg-background font-sans text-foreground antialiased transition-colors duration-300;
+  }
+  button,
+  a,
+  input {
+    -webkit-tap-highlight-color: transparent;
+  }
+  button,
+  a {
+    @apply outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2;
+  }
+  ::selection {
+    @apply bg-lime text-ink;
+  }
+}
+
+@layer components {
+  .nav-link {
+    @apply rounded-lg px-3 py-2 text-sm text-ink/65 transition hover:bg-muted hover:text-ink;
+  }
+  .icon-button {
+    @apply h-11 w-11 place-items-center rounded-full text-ink transition hover:bg-ink/5;
+  }
+  .eyebrow {
+    @apply mb-2 text-xs font-bold uppercase tracking-[.12em] text-primary;
+  }
+  .section-title {
+    @apply text-3xl font-bold leading-tight tracking-[-.035em] sm:text-5xl;
+  }
+  .menu-card {
+    @apply flex flex-col overflow-hidden rounded-2xl border border-border bg-card transition duration-300 hover:-translate-y-0.5 hover:shadow-xl;
+  }
+  .mobile-nav-item {
+    @apply flex flex-col items-center gap-1 py-1 text-[10px] font-bold text-ink/55;
+  }
+}
+
+.noise {
+  background-image: none;
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  scrollbar-width: none;
+}
