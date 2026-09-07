@@ -65,6 +65,8 @@ const translations = {
     light: 'light',
     dark: 'dark',
     logoHome: 'Enzo Eats home',
+    loadingApp: 'Loading Enzo Eats',
+    preparingPickup: 'Preparing your pickup experience…',
   },
   tl: {
     menu: 'Menu',
@@ -130,6 +132,8 @@ const translations = {
     light: 'light',
     dark: 'dark',
     logoHome: 'Home ng Enzo Eats',
+    loadingApp: 'Nilo-load ang Enzo Eats',
+    preparingPickup: 'Inihahanda ang iyong pickup experience…',
   },
 }
 

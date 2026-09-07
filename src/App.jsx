@@ -1,6 +1,6 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { StatusBar } from 'expo-status-bar'
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { ScrollView, StyleSheet, View } from 'react-native'
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context'
 import { Header } from './components/Header'
@@ -10,6 +10,7 @@ import { Story } from './components/Story'
 import { Footer } from './components/Footer'
 import { CartDrawer } from './components/CartDrawer'
 import { MobileNav } from './components/MobileNav'
+import { LaunchScreen } from './components/LaunchScreen'
 import { useThemeStore } from './store/useThemeStore'
 import { useLanguageStore } from './store/useLanguageStore'
 import { useColors } from './theme'
@@ -20,6 +21,8 @@ const App = () => {
   const [category, setCategory] = useState('all')
   const [search, setSearch] = useState('')
   const [menuY, setMenuY] = useState(0)
+  const [appReady, setAppReady] = useState(false)
+  const [showLaunch, setShowLaunch] = useState(true)
   const scrollRef = useRef(null)
   const searchRef = useRef(null)
   const theme = useThemeStore((state) => state.theme)
@@ -28,9 +31,19 @@ const App = () => {
   const colors = useColors(theme)
 
   useEffect(() => {
-    hydrateTheme()
-    hydrateLanguage()
+    let active = true
+    const minimumDisplay = new Promise((resolve) => setTimeout(resolve, 1200))
+
+    Promise.all([hydrateTheme(), hydrateLanguage(), minimumDisplay]).finally(() => {
+      if (active) setAppReady(true)
+    })
+
+    return () => {
+      active = false
+    }
   }, [hydrateLanguage, hydrateTheme])
+
+  const finishLaunch = useCallback(() => setShowLaunch(false), [])
 
   const openMenu = () => scrollRef.current?.scrollTo({ y: menuY, animated: true })
   const focusSearch = () => {
@@ -69,6 +82,7 @@ const App = () => {
             onSearch={focusSearch}
           />
           <CartDrawer />
+          {showLaunch && <LaunchScreen ready={appReady} onFinished={finishLaunch} />}
         </SafeAreaView>
       </QueryClientProvider>
     </SafeAreaProvider>
