@@ -1,14 +1,26 @@
-export const Logo = ({ compact = false }) => {
+import { Pressable, StyleSheet, Text, View } from 'react-native'
+import { useThemeStore } from '../store/useThemeStore'
+import { useColors } from '../theme'
+
+export const Logo = ({ compact = false, inverse = false, onPress }) => {
+  const colors = useColors(useThemeStore((state) => state.theme))
   return (
-    <a href="#top" className="group flex items-center gap-2.5" aria-label="Enzo Eats home">
-      <span className="grid h-9 w-9 place-items-center rounded-lg bg-primary text-base font-extrabold text-white dark:text-black">
-        E
-      </span>
+    <Pressable accessibilityLabel="Enzo Eats home" onPress={onPress} style={styles.logo}>
+      <View style={[styles.mark, { backgroundColor: colors.primary }]}>
+        <Text style={[styles.markText, { color: colors.cream }]}>E</Text>
+      </View>
       {!compact && (
-        <span className="text-xl font-bold tracking-[-.045em] text-ink">
-          Enzo <span className="text-primary">Eats</span>
-        </span>
+        <Text style={[styles.name, { color: inverse ? '#fff' : colors.ink }]}>
+          Enzo <Text style={{ color: colors.primary }}>Eats</Text>
+        </Text>
       )}
-    </a>
+    </Pressable>
   )
 }
+
+const styles = StyleSheet.create({
+  logo: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  mark: { width: 36, height: 36, borderRadius: 9, alignItems: 'center', justifyContent: 'center' },
+  markText: { fontSize: 17, fontWeight: '900' },
+  name: { fontSize: 20, fontWeight: '800', letterSpacing: -0.8 },
+})

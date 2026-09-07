@@ -1,56 +1,133 @@
-import { Heart, Plus, Star } from 'lucide-react'
+import { Heart, Plus, Star } from 'lucide-react-native'
+import { useState } from 'react'
+import { Image, Pressable, StyleSheet, Text, View } from 'react-native'
 import { useOrderStore } from '../store/useOrderStore'
-import { Badge } from './ui/badge'
-import { Button } from './ui/button'
-import { Card, CardContent } from './ui/card'
+import { useThemeStore } from '../store/useThemeStore'
+import { useColors } from '../theme'
 
-export const MenuCard = ({ item }) => {
+export const MenuCard = ({ item, width }) => {
+  const [frame, setFrame] = useState({ width: 0, height: 0 })
   const favorites = useOrderStore((state) => state.favorites)
   const toggleFavorite = useOrderStore((state) => state.toggleFavorite)
   const addToCart = useOrderStore((state) => state.addToCart)
-  const isFavorite = favorites.includes(item.id)
+  const colors = useColors(useThemeStore((state) => state.theme))
+  const favorite = favorites.includes(item.id)
+
   return (
-    <Card className="menu-card group">
-      <div className="relative aspect-[4/3] overflow-hidden bg-muted">
-        <img
-          src={item.image}
-          alt=""
-          className="h-full w-full object-cover transition duration-500 group-hover:scale-[1.03]"
-          style={{ objectPosition: item.position }}
-        />
-        {item.badge && (
-          <Badge className="absolute left-3 top-3 bg-card text-foreground shadow-sm">
-            {item.badge}
-          </Badge>
+    <View
+      style={[styles.card, { width, backgroundColor: colors.card, borderColor: colors.border }]}
+    >
+      <View
+        onLayout={(event) => setFrame(event.nativeEvent.layout)}
+        style={[styles.imageFrame, { backgroundColor: colors.muted }]}
+      >
+        {frame.width > 0 && (
+          <Image
+            source={item.image}
+            resizeMode="cover"
+            style={{
+              position: 'absolute',
+              width: frame.width * 2,
+              height: frame.height * 2,
+              left: -item.crop.x * frame.width,
+              top: -item.crop.y * frame.height,
+            }}
+          />
         )}
-        <Button
-          variant="secondary"
-          size="icon"
-          onClick={() => toggleFavorite(item.id)}
-          className="absolute right-3 top-3 h-9 w-9 rounded-full bg-card/95"
-          aria-label={`${isFavorite ? 'Remove' : 'Add'} ${item.name} ${isFavorite ? 'from' : 'to'} favorites`}
+        {item.badge && (
+          <View style={[styles.badge, { backgroundColor: colors.card }]}>
+            <Text style={[styles.badgeText, { color: colors.foreground }]}>{item.badge}</Text>
+          </View>
+        )}
+        <Pressable
+          accessibilityLabel={`${favorite ? 'Remove' : 'Add'} ${item.name} ${favorite ? 'from' : 'to'} favorites`}
+          onPress={() => toggleFavorite(item.id)}
+          style={[styles.favorite, { backgroundColor: colors.card }]}
         >
-          <Heart size={18} className={isFavorite ? 'fill-primary text-primary' : ''} />
-        </Button>
-      </div>
-      <CardContent className="flex flex-1 flex-col p-5">
-        <div className="flex items-start justify-between gap-4">
-          <div>
-            <p className="text-xs font-medium text-muted-foreground">{item.category}</p>
-            <h3 className="mt-1 text-lg font-semibold tracking-tight">{item.name}</h3>
-          </div>
-          <span className="font-semibold">${item.price}</span>
-        </div>
-        <p className="mt-2 flex-1 text-sm leading-6 text-muted-foreground">{item.description}</p>
-        <div className="mt-5 flex items-center justify-between">
-          <span className="flex items-center gap-1 text-sm font-medium">
-            <Star size={14} className="fill-coral text-coral" /> {item.rating}
-          </span>
-          <Button size="sm" onClick={() => addToCart(item)}>
-            <Plus size={15} /> Add
-          </Button>
-        </div>
-      </CardContent>
-    </Card>
+          <Heart
+            size={18}
+            color={favorite ? colors.primary : colors.foreground}
+            fill={favorite ? colors.primary : 'transparent'}
+          />
+        </Pressable>
+      </View>
+      <View style={styles.content}>
+        <View style={styles.titleRow}>
+          <View style={styles.titleCopy}>
+            <Text style={[styles.category, { color: colors.mutedForeground }]}>
+              {item.category}
+            </Text>
+            <Text style={[styles.name, { color: colors.foreground }]}>{item.name}</Text>
+          </View>
+          <Text style={[styles.price, { color: colors.foreground }]}>${item.price}</Text>
+        </View>
+        <Text style={[styles.description, { color: colors.mutedForeground }]}>
+          {item.description}
+        </Text>
+        <View style={styles.bottom}>
+          <View style={styles.rating}>
+            <Star size={14} color={colors.coral} fill={colors.coral} />
+            <Text style={[styles.ratingText, { color: colors.foreground }]}>{item.rating}</Text>
+          </View>
+          <Pressable
+            onPress={() => addToCart(item)}
+            style={[styles.add, { backgroundColor: colors.primary }]}
+          >
+            <Plus size={15} color="#fff" />
+            <Text style={styles.addText}>Add</Text>
+          </Pressable>
+        </View>
+      </View>
+    </View>
   )
 }
+
+const styles = StyleSheet.create({
+  card: { minWidth: 250, borderWidth: 1, borderRadius: 18, overflow: 'hidden' },
+  imageFrame: { width: '100%', aspectRatio: 4 / 3, overflow: 'hidden' },
+  badge: {
+    position: 'absolute',
+    left: 12,
+    top: 12,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 99,
+    elevation: 2,
+  },
+  badgeText: { fontSize: 11, fontWeight: '800' },
+  favorite: {
+    position: 'absolute',
+    right: 12,
+    top: 12,
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    alignItems: 'center',
+    justifyContent: 'center',
+    elevation: 2,
+  },
+  content: { padding: 18, minHeight: 220 },
+  titleRow: { flexDirection: 'row', justifyContent: 'space-between', gap: 12 },
+  titleCopy: { flex: 1 },
+  category: { fontSize: 11, fontWeight: '600' },
+  name: { fontSize: 18, fontWeight: '800', letterSpacing: -0.3, marginTop: 4 },
+  price: { fontSize: 16, fontWeight: '800' },
+  description: { fontSize: 14, lineHeight: 21, marginTop: 10, flex: 1 },
+  bottom: {
+    marginTop: 18,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  rating: { flexDirection: 'row', alignItems: 'center', gap: 5 },
+  ratingText: { fontSize: 13, fontWeight: '700' },
+  add: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    borderRadius: 9,
+    paddingHorizontal: 13,
+    paddingVertical: 9,
+  },
+  addText: { color: '#fff', fontWeight: '800', fontSize: 13 },
+})

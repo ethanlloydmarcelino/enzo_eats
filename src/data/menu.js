@@ -1,4 +1,4 @@
-const mealImage = '/images/filipino-rice-meals.png'
+const mealImage = require('../../assets/images/filipino-rice-meals.png')
 
 const menu = [
   {
@@ -8,7 +8,7 @@ const menu = [
     price: 9,
     category: 'Rice Meal',
     image: mealImage,
-    position: '18% 18%',
+    crop: { x: 0, y: 0 },
     badge: 'Popular',
     rating: 4.9,
   },
@@ -19,7 +19,7 @@ const menu = [
     price: 12,
     category: 'Rice Meal',
     image: mealImage,
-    position: '82% 18%',
+    crop: { x: 1, y: 0 },
     rating: 4.8,
   },
   {
@@ -29,7 +29,7 @@ const menu = [
     price: 13,
     category: 'Rice Meal',
     image: mealImage,
-    position: '18% 82%',
+    crop: { x: 0, y: 1 },
     rating: 4.8,
   },
   {
@@ -39,7 +39,7 @@ const menu = [
     price: 11,
     category: 'Rice Meal',
     image: mealImage,
-    position: '82% 82%',
+    crop: { x: 1, y: 1 },
     badge: 'Best seller',
     rating: 4.9,
   },

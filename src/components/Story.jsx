@@ -1,5 +1,7 @@
-import { Clock3, Leaf, Sparkles } from 'lucide-react'
-import { Card, CardContent } from './ui/card'
+import { Clock3, Leaf, Sparkles } from 'lucide-react-native'
+import { StyleSheet, Text, View, useWindowDimensions } from 'react-native'
+import { useThemeStore } from '../store/useThemeStore'
+import { useColors } from '../theme'
 
 const values = [
   {
@@ -20,34 +22,66 @@ const values = [
 ]
 
 export const Story = () => {
+  const colors = useColors(useThemeStore((state) => state.theme))
+  const { width } = useWindowDimensions()
+  const wide = width >= 760
   return (
-    <section id="story" className="border-y bg-lilac">
-      <div className="mx-auto max-w-7xl px-4 py-20 sm:px-6 lg:px-8 lg:py-24">
-        <div className="max-w-2xl">
-          <p className="eyebrow">The Enzo standard</p>
-          <h2 className="section-title">Good food should be simple.</h2>
-          <p className="mt-4 text-lg leading-8 text-muted-foreground">
+    <View style={[styles.section, { backgroundColor: colors.lilac, borderColor: colors.border }]}>
+      <View style={styles.inner}>
+        <View style={styles.intro}>
+          <Text style={[styles.eyebrow, { color: colors.primary }]}>THE ENZO STANDARD</Text>
+          <Text style={[styles.title, { color: colors.foreground }]}>
+            Good food should be simple.
+          </Text>
+          <Text style={[styles.subtitle, { color: colors.mutedForeground }]}>
             A focused personal ordering platform with clear choices, quick checkout, and helpful
             recommendations.
-          </p>
-        </div>
-        <div className="mt-10 grid gap-5 md:grid-cols-3">
+          </Text>
+        </View>
+        <View style={[styles.cards, wide && styles.cardsWide]}>
           {values.map((value) => {
-            const ValueIcon = value.icon
+            const Icon = value.icon
             return (
-              <Card key={value.title} className="bg-card">
-                <CardContent>
-                  <div className="grid h-11 w-11 place-items-center rounded-xl bg-primary/10 text-primary">
-                    <ValueIcon size={21} />
-                  </div>
-                  <h3 className="mt-6 text-lg font-semibold">{value.title}</h3>
-                  <p className="mt-2 text-sm leading-6 text-muted-foreground">{value.text}</p>
-                </CardContent>
-              </Card>
+              <View
+                key={value.title}
+                style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}
+              >
+                <View style={[styles.icon, { backgroundColor: `${colors.primary}1f` }]}>
+                  <Icon size={21} color={colors.primary} />
+                </View>
+                <Text style={[styles.cardTitle, { color: colors.foreground }]}>{value.title}</Text>
+                <Text style={[styles.cardText, { color: colors.mutedForeground }]}>
+                  {value.text}
+                </Text>
+              </View>
             )
           })}
-        </div>
-      </div>
-    </section>
+        </View>
+      </View>
+    </View>
   )
 }
+
+const styles = StyleSheet.create({
+  section: {
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+  },
+  inner: {
+    width: '100%',
+    maxWidth: 1240,
+    alignSelf: 'center',
+    paddingHorizontal: 18,
+    paddingVertical: 72,
+  },
+  intro: { maxWidth: 700 },
+  eyebrow: { fontSize: 12, fontWeight: '900', letterSpacing: 1.4, marginBottom: 8 },
+  title: { fontSize: 42, lineHeight: 48, fontWeight: '900', letterSpacing: -1.5 },
+  subtitle: { fontSize: 17, lineHeight: 27, marginTop: 14 },
+  cards: { marginTop: 34, gap: 16 },
+  cardsWide: { flexDirection: 'row' },
+  card: { flex: 1, borderWidth: 1, borderRadius: 17, padding: 24 },
+  icon: { width: 44, height: 44, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
+  cardTitle: { fontSize: 18, fontWeight: '800', marginTop: 20 },
+  cardText: { fontSize: 14, lineHeight: 22, marginTop: 8 },
+})

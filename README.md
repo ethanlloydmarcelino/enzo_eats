@@ -1,22 +1,32 @@
 # Enzo Eats
 
-A responsive personal meal-ordering frontend built with React, Vite, Tailwind CSS, shadcn-ui/Radix primitives, Zustand, TanStack React Query, and Lucide icons.
+A cross-platform meal-ordering app built with React Native, Expo, Metro, Zustand, TanStack React Query, and Lucide icons. It runs on Android, iOS, and the web from one codebase.
 
-The header includes a persistent light/dark theme toggle. It follows the device preference on first visit, then remembers the user's explicit choice in local storage.
+The app includes responsive native layouts, menu search and filtering, favorites, pickup/delivery selection, a cart modal, and a persistent light/dark theme.
 
 ## Run locally
 
 ```bash
 npm install
-npm run dev
+npm start
+```
+
+Use `npm run android`, `npm run ios`, or `npm run web` to open a specific platform. Metro is started by Expo automatically.
+
+For native libraries such as AWS Amplify, use an Expo development build rather than Expo Go:
+
+```bash
+npx expo install expo-dev-client
+npx expo run:android
+# or, on macOS: npx expo run:ios
 ```
 
 ## Amplify handoff
 
-The current menu is returned by `src/data/menu.js`. Replace `fetchMenu()` with your Amplify Data client call; the React Query consumer in `src/components/MenuSection.jsx` can remain unchanged. Cart, favorites, and pickup/delivery state live in `src/store/useOrderStore.js` and can later be hydrated from an authenticated Amplify user.
+The current menu is returned by `src/data/menu.js`. Replace `fetchMenu()` with an Amplify Data client call; the React Query consumer in `src/components/MenuSection.jsx` can remain unchanged. Cart, favorites, and pickup/delivery state live in `src/store/useOrderStore.js` and can later be hydrated from an authenticated Amplify user.
 
 The checkout button is intentionally frontend-only until payment and order creation are connected.
 
 ## Code standards
 
-Components and utilities use arrow functions. Run `npm run format` before committing and `npm run format:check` in CI. Interactive shadcn components use Radix UI primitives with Tailwind CSS styling.
+Components use arrow functions and React Native `StyleSheet` styles. Run `npm run format` before committing and `npm run format:check` in CI.

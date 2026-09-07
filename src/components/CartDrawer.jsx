@@ -1,94 +1,209 @@
-import { Minus, Plus, ShoppingBag } from 'lucide-react'
+import { Minus, Plus, ShoppingBag, X } from 'lucide-react-native'
+import {
+  Image,
+  Modal,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+  useWindowDimensions,
+} from 'react-native'
+import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useOrderStore } from '../store/useOrderStore'
-import { Button } from './ui/button'
-import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from './ui/sheet'
+import { useThemeStore } from '../store/useThemeStore'
+import { useColors } from '../theme'
 
 export const CartDrawer = () => {
   const { cart, cartOpen, orderType, setCartOpen, changeQuantity, clearCart } = useOrderStore()
+  const colors = useColors(useThemeStore((state) => state.theme))
+  const insets = useSafeAreaInsets()
+  const { width } = useWindowDimensions()
   const subtotal = cart.reduce((sum, item) => sum + item.price * item.quantity, 0)
   const service = subtotal ? 2.5 : 0
+
   return (
-    <Sheet open={cartOpen} onOpenChange={setCartOpen}>
-      <SheetContent>
-        <SheetHeader>
-          <SheetTitle>Your order</SheetTitle>
-          <SheetDescription>{orderType} · ready in 20–30 min</SheetDescription>
-        </SheetHeader>
-        <div className="flex-1 overflow-y-auto p-5 sm:p-6">
-          {!cart.length ? (
-            <div className="grid h-full place-content-center text-center">
-              <ShoppingBag size={44} strokeWidth={1.4} className="mx-auto text-ink/30" />
-              <p className="mt-4 text-2xl font-bold tracking-tight">Your bag is empty</p>
-              <p className="mt-2 text-sm text-muted-foreground">Add a dish to get started.</p>
-              <Button className="mt-6" onClick={() => setCartOpen(false)}>
-                Browse menu
-              </Button>
-            </div>
-          ) : (
-            cart.map((item) => (
-              <div key={item.id} className="flex gap-4 border-b py-5 first:pt-0">
-                <div className="h-20 w-20 shrink-0 overflow-hidden rounded-xl bg-muted">
-                  <img
-                    src={item.image}
-                    alt=""
-                    className="h-full w-full object-cover"
-                    style={{ objectPosition: item.position }}
-                  />
-                </div>
-                <div className="flex-1">
-                  <div className="flex justify-between gap-3">
-                    <p className="font-semibold">{item.name}</p>
-                    <p className="font-semibold">${item.price * item.quantity}</p>
-                  </div>
-                  <p className="mt-1 text-xs text-muted-foreground">{item.category}</p>
-                  <div className="mt-3 flex w-fit items-center rounded-lg border">
-                    <button
-                      onClick={() => changeQuantity(item.id, -1)}
-                      className="p-1.5"
-                      aria-label={`Remove one ${item.name}`}
-                    >
-                      <Minus size={14} />
-                    </button>
-                    <span className="w-7 text-center text-xs font-semibold">{item.quantity}</span>
-                    <button
-                      onClick={() => changeQuantity(item.id, 1)}
-                      className="p-1.5"
-                      aria-label={`Add one ${item.name}`}
-                    >
-                      <Plus size={14} />
-                    </button>
-                  </div>
-                </div>
-              </div>
-            ))
-          )}
-        </div>
-        {cart.length > 0 && (
-          <div className="border-t bg-card p-5 sm:p-6">
-            <div className="mb-2 flex justify-between text-sm text-muted-foreground">
-              <span>Subtotal</span>
-              <span>${subtotal.toFixed(2)}</span>
-            </div>
-            <div className="mb-5 flex justify-between text-sm text-muted-foreground">
-              <span>Service fee</span>
-              <span>${service.toFixed(2)}</span>
-            </div>
-            <div className="mb-5 flex justify-between text-xl font-bold">
-              <span>Total</span>
-              <span>${(subtotal + service).toFixed(2)}</span>
-            </div>
-            <Button size="lg" className="w-full">
-              Continue to checkout · {orderType}
-            </Button>
-            <button
-              onClick={clearCart}
-              className="mt-4 w-full text-xs font-semibold text-muted-foreground hover:text-primary"
+    <Modal
+      visible={cartOpen}
+      transparent
+      animationType="slide"
+      onRequestClose={() => setCartOpen(false)}
+    >
+      <View style={[styles.overlay, { backgroundColor: colors.overlay }]}>
+        <Pressable
+          style={styles.dismissArea}
+          onPress={() => setCartOpen(false)}
+          accessibilityLabel="Close cart"
+        />
+        <View
+          style={[
+            styles.sheet,
+            width >= 600 && styles.sheetWide,
+            { backgroundColor: colors.card, paddingBottom: Math.max(insets.bottom, 18) },
+          ]}
+        >
+          <View style={[styles.header, { borderBottomColor: colors.border }]}>
+            <View>
+              <Text style={[styles.title, { color: colors.foreground }]}>Your order</Text>
+              <Text style={[styles.description, { color: colors.mutedForeground }]}>
+                {orderType} · ready in 20–30 min
+              </Text>
+            </View>
+            <Pressable
+              onPress={() => setCartOpen(false)}
+              style={[styles.close, { backgroundColor: colors.muted }]}
             >
-              Clear bag
-            </button>
-          </div>
-        )}
-      </SheetContent>
-    </Sheet>
+              <X size={20} color={colors.foreground} />
+            </Pressable>
+          </View>
+          {!cart.length ? (
+            <View style={styles.empty}>
+              <ShoppingBag size={46} strokeWidth={1.4} color={colors.mutedForeground} />
+              <Text style={[styles.emptyTitle, { color: colors.foreground }]}>
+                Your bag is empty
+              </Text>
+              <Text style={[styles.emptyText, { color: colors.mutedForeground }]}>
+                Add a dish to get started.
+              </Text>
+              <Pressable
+                onPress={() => setCartOpen(false)}
+                style={[styles.primary, { backgroundColor: colors.primary }]}
+              >
+                <Text style={styles.primaryText}>Browse menu</Text>
+              </Pressable>
+            </View>
+          ) : (
+            <>
+              <ScrollView contentContainerStyle={styles.items}>
+                {cart.map((item) => (
+                  <View key={item.id} style={[styles.item, { borderBottomColor: colors.border }]}>
+                    <Image source={item.image} style={styles.itemImage} resizeMode="cover" />
+                    <View style={styles.itemCopy}>
+                      <View style={styles.itemTitleRow}>
+                        <Text style={[styles.itemName, { color: colors.foreground }]}>
+                          {item.name}
+                        </Text>
+                        <Text style={[styles.itemPrice, { color: colors.foreground }]}>
+                          ${item.price * item.quantity}
+                        </Text>
+                      </View>
+                      <Text style={[styles.itemCategory, { color: colors.mutedForeground }]}>
+                        {item.category}
+                      </Text>
+                      <View style={[styles.quantity, { borderColor: colors.border }]}>
+                        <Pressable
+                          accessibilityLabel={`Remove one ${item.name}`}
+                          onPress={() => changeQuantity(item.id, -1)}
+                          style={styles.quantityButton}
+                        >
+                          <Minus size={14} color={colors.foreground} />
+                        </Pressable>
+                        <Text style={[styles.quantityText, { color: colors.foreground }]}>
+                          {item.quantity}
+                        </Text>
+                        <Pressable
+                          accessibilityLabel={`Add one ${item.name}`}
+                          onPress={() => changeQuantity(item.id, 1)}
+                          style={styles.quantityButton}
+                        >
+                          <Plus size={14} color={colors.foreground} />
+                        </Pressable>
+                      </View>
+                    </View>
+                  </View>
+                ))}
+              </ScrollView>
+              <View style={[styles.summary, { borderTopColor: colors.border }]}>
+                <View style={styles.summaryRow}>
+                  <Text style={{ color: colors.mutedForeground }}>Subtotal</Text>
+                  <Text style={{ color: colors.mutedForeground }}>${subtotal.toFixed(2)}</Text>
+                </View>
+                <View style={styles.summaryRow}>
+                  <Text style={{ color: colors.mutedForeground }}>Service fee</Text>
+                  <Text style={{ color: colors.mutedForeground }}>${service.toFixed(2)}</Text>
+                </View>
+                <View style={[styles.summaryRow, styles.totalRow]}>
+                  <Text style={[styles.total, { color: colors.foreground }]}>Total</Text>
+                  <Text style={[styles.total, { color: colors.foreground }]}>
+                    ${(subtotal + service).toFixed(2)}
+                  </Text>
+                </View>
+                <Pressable style={[styles.checkout, { backgroundColor: colors.primary }]}>
+                  <Text style={styles.checkoutText}>Continue to checkout · {orderType}</Text>
+                </Pressable>
+                <Pressable onPress={clearCart}>
+                  <Text style={[styles.clear, { color: colors.mutedForeground }]}>Clear bag</Text>
+                </Pressable>
+              </View>
+            </>
+          )}
+        </View>
+      </View>
+    </Modal>
   )
 }
+
+const styles = StyleSheet.create({
+  overlay: { flex: 1, flexDirection: 'row' },
+  dismissArea: { flex: 1 },
+  sheet: {
+    width: '100%',
+    maxHeight: '92%',
+    marginTop: 'auto',
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    overflow: 'hidden',
+  },
+  sheetWide: { width: 440, height: '100%', maxHeight: '100%', marginLeft: 'auto', borderRadius: 0 },
+  header: {
+    padding: 22,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  title: { fontSize: 24, fontWeight: '900', letterSpacing: -0.7 },
+  description: { fontSize: 13, marginTop: 4 },
+  close: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  empty: { minHeight: 420, alignItems: 'center', justifyContent: 'center', padding: 30 },
+  emptyTitle: { fontSize: 24, fontWeight: '900', marginTop: 18 },
+  emptyText: { fontSize: 14, marginTop: 8 },
+  primary: { marginTop: 24, borderRadius: 10, paddingHorizontal: 20, paddingVertical: 13 },
+  primaryText: { color: '#fff', fontWeight: '800' },
+  items: { padding: 20 },
+  item: {
+    flexDirection: 'row',
+    gap: 14,
+    paddingVertical: 17,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+  },
+  itemImage: { width: 78, height: 78, borderRadius: 12 },
+  itemCopy: { flex: 1 },
+  itemTitleRow: { flexDirection: 'row', justifyContent: 'space-between', gap: 8 },
+  itemName: { flex: 1, fontSize: 15, fontWeight: '800' },
+  itemPrice: { fontSize: 14, fontWeight: '800' },
+  itemCategory: { fontSize: 11, marginTop: 4 },
+  quantity: {
+    alignSelf: 'flex-start',
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderRadius: 8,
+    marginTop: 10,
+  },
+  quantityButton: { padding: 7 },
+  quantityText: { minWidth: 24, textAlign: 'center', fontSize: 12, fontWeight: '800' },
+  summary: { padding: 20, borderTopWidth: StyleSheet.hairlineWidth },
+  summaryRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 9 },
+  totalRow: { marginTop: 8, marginBottom: 18 },
+  total: { fontSize: 20, fontWeight: '900' },
+  checkout: { minHeight: 50, borderRadius: 11, alignItems: 'center', justifyContent: 'center' },
+  checkoutText: { color: '#fff', fontWeight: '800' },
+  clear: { textAlign: 'center', fontSize: 12, fontWeight: '700', marginTop: 15 },
+})

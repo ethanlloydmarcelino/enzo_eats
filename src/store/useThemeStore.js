@@ -1,24 +1,20 @@
+import AsyncStorage from '@react-native-async-storage/async-storage'
+import { Appearance } from 'react-native'
 import { create } from 'zustand'
 
-const getInitialTheme = () => {
-  if (typeof window === 'undefined') return 'light'
-  const saved = window.localStorage.getItem('enzo-theme')
-  if (saved === 'light' || saved === 'dark') return saved
-  return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
-}
+const storageKey = 'enzo-theme'
+const systemTheme = Appearance.getColorScheme() === 'dark' ? 'dark' : 'light'
 
 export const useThemeStore = create((set) => ({
-  theme: getInitialTheme(),
-  setTheme: (theme) => {
-    document.documentElement.classList.toggle('dark', theme === 'dark')
-    window.localStorage.setItem('enzo-theme', theme)
-    set({ theme })
+  theme: systemTheme,
+  hydrateTheme: async () => {
+    const saved = await AsyncStorage.getItem(storageKey)
+    if (saved === 'light' || saved === 'dark') set({ theme: saved })
   },
   toggleTheme: () =>
     set((state) => {
       const theme = state.theme === 'dark' ? 'light' : 'dark'
-      document.documentElement.classList.toggle('dark', theme === 'dark')
-      window.localStorage.setItem('enzo-theme', theme)
+      AsyncStorage.setItem(storageKey, theme)
       return { theme }
     }),
 }))

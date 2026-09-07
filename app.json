@@ -1,0 +1,23 @@
+{
+  "expo": {
+    "name": "Enzo Eats",
+    "slug": "enzo-eats",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "automatic",
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.enzoeats.app"
+    },
+    "android": {
+      "package": "com.enzoeats.app",
+      "adaptiveIcon": {
+        "backgroundColor": "#18a766"
+      }
+    },
+    "web": {
+      "bundler": "metro",
+      "output": "single"
+    }
+  }
+}

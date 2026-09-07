@@ -1,67 +1,151 @@
-import { ArrowRight, Clock3, MapPin, Sparkles, Star } from 'lucide-react'
+import { ArrowRight, Clock3, MapPin, Sparkles, Star } from 'lucide-react-native'
+import { Image, Pressable, StyleSheet, Text, View, useWindowDimensions } from 'react-native'
 import { useOrderStore } from '../store/useOrderStore'
-import { Badge } from './ui/badge'
-import { Button } from './ui/button'
-import { Tabs, TabsList, TabsTrigger } from './ui/tabs'
+import { useThemeStore } from '../store/useThemeStore'
+import { useColors } from '../theme'
 
-export const Hero = () => {
+const heroImage = require('../../assets/images/filipino-rice-meals.png')
+
+export const Hero = ({ onOrder }) => {
   const orderType = useOrderStore((state) => state.orderType)
   const setOrderType = useOrderStore((state) => state.setOrderType)
+  const colors = useColors(useThemeStore((state) => state.theme))
+  const { width } = useWindowDimensions()
+  const wide = width >= 900
+
   return (
-    <section id="top" className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
-      <div className="grid min-h-[570px] overflow-hidden rounded-3xl bg-lilac lg:grid-cols-[1fr_.92fr]">
-        <div className="flex flex-col justify-center px-6 py-14 sm:px-12 lg:px-16">
-          <Badge variant="lime" className="mb-6 w-fit gap-2">
-            <Sparkles size={13} /> Personalized for you
-          </Badge>
-          <h1 className="max-w-2xl text-5xl font-bold leading-[.98] tracking-[-.055em] sm:text-7xl">
-            Your meal.
-            <br />
-            <span className="text-primary">Ready to order.</span>
-          </h1>
-          <p className="mt-6 max-w-lg text-base leading-7 text-muted-foreground sm:text-lg">
+    <View style={styles.outer}>
+      <View style={[styles.hero, wide && styles.heroWide, { backgroundColor: colors.lilac }]}>
+        <View style={[styles.copy, wide && styles.copyWide]}>
+          <View style={[styles.badge, { backgroundColor: `${colors.primary}1f` }]}>
+            <Sparkles size={13} color={colors.primary} />
+            <Text style={[styles.badgeText, { color: colors.primary }]}>Personalized for you</Text>
+          </View>
+          <Text style={[styles.title, wide && styles.titleWide, { color: colors.foreground }]}>
+            Your meal.{`\n`}
+            <Text style={{ color: colors.primary }}>Ready to order.</Text>
+          </Text>
+          <Text style={[styles.subtitle, { color: colors.mutedForeground }]}>
             Four satisfying rice meals, one simple online ordering experience.
-          </p>
-          <div className="mt-8 max-w-lg rounded-2xl bg-card p-2 shadow-lg sm:flex sm:items-center">
-            <Tabs value={orderType} onValueChange={setOrderType} className="sm:flex-1">
-              <TabsList className="grid w-full grid-cols-2 bg-muted">
-                {['Pickup', 'Delivery'].map((type) => (
-                  <TabsTrigger key={type} value={type}>
+          </Text>
+          <View style={[styles.orderBox, { backgroundColor: colors.card }]}>
+            <View style={[styles.tabs, { backgroundColor: colors.muted }]}>
+              {['Pickup', 'Delivery'].map((type) => (
+                <Pressable
+                  key={type}
+                  onPress={() => setOrderType(type)}
+                  style={[styles.tab, orderType === type && { backgroundColor: colors.card }]}
+                >
+                  <Text
+                    style={[
+                      styles.tabText,
+                      { color: orderType === type ? colors.foreground : colors.mutedForeground },
+                    ]}
+                  >
                     {type}
-                  </TabsTrigger>
-                ))}
-              </TabsList>
-            </Tabs>
-            <Button size="lg" className="mt-2 w-full sm:ml-2 sm:mt-0 sm:w-auto" asChild>
-              <a href="#menu">
-                Order now <ArrowRight size={18} />
-              </a>
-            </Button>
-          </div>
-          <div className="mt-7 flex flex-wrap gap-x-6 gap-y-3 text-sm text-muted-foreground">
-            <span className="flex items-center gap-2">
-              <Clock3 size={16} /> 20–30 min
-            </span>
-            <span className="flex items-center gap-2">
-              <MapPin size={16} /> 2.4 miles
-            </span>
-            <span className="flex items-center gap-2">
-              <Star size={16} className="fill-coral text-coral" /> 4.9
-            </span>
-          </div>
-        </div>
-        <div className="relative min-h-[360px] lg:min-h-0">
-          <img
-            className="h-full w-full object-cover"
-            src="/images/filipino-rice-meals.png"
-            alt="Shomai, chicken, beef, and sisig rice meals"
+                  </Text>
+                </Pressable>
+              ))}
+            </View>
+            <Pressable
+              onPress={onOrder}
+              style={[styles.orderButton, { backgroundColor: colors.primary }]}
+            >
+              <Text style={styles.orderText}>Order now</Text>
+              <ArrowRight size={18} color="#fff" />
+            </Pressable>
+          </View>
+          <View style={styles.meta}>
+            <View style={styles.metaItem}>
+              <Clock3 size={16} color={colors.mutedForeground} />
+              <Text style={[styles.metaText, { color: colors.mutedForeground }]}>20–30 min</Text>
+            </View>
+            <View style={styles.metaItem}>
+              <MapPin size={16} color={colors.mutedForeground} />
+              <Text style={[styles.metaText, { color: colors.mutedForeground }]}>2.4 miles</Text>
+            </View>
+            <View style={styles.metaItem}>
+              <Star size={16} color={colors.coral} fill={colors.coral} />
+              <Text style={[styles.metaText, { color: colors.mutedForeground }]}>4.9</Text>
+            </View>
+          </View>
+        </View>
+        <View style={[styles.imageWrap, wide && styles.imageWide]}>
+          <Image
+            source={heroImage}
+            resizeMode="cover"
+            style={styles.image}
+            accessibilityLabel="Shomai, chicken, beef, and sisig rice meals"
           />
-          <div className="absolute bottom-5 left-5 rounded-xl bg-card/95 px-4 py-3 shadow-lg backdrop-blur">
-            <p className="text-xs font-semibold text-primary">Recommended for you</p>
-            <p className="mt-0.5 font-semibold">Shomai and Rice</p>
-          </div>
-        </div>
-      </div>
-    </section>
+          <View style={[styles.recommendation, { backgroundColor: colors.card }]}>
+            <Text style={[styles.recommendationLabel, { color: colors.primary }]}>
+              Recommended for you
+            </Text>
+            <Text style={[styles.recommendationName, { color: colors.foreground }]}>
+              Shomai and Rice
+            </Text>
+          </View>
+        </View>
+      </View>
+    </View>
   )
 }
+
+const styles = StyleSheet.create({
+  outer: { width: '100%', maxWidth: 1280, alignSelf: 'center', padding: 18 },
+  hero: { borderRadius: 28, overflow: 'hidden' },
+  heroWide: { minHeight: 570, flexDirection: 'row' },
+  copy: { paddingHorizontal: 26, paddingVertical: 46 },
+  copyWide: { flex: 1.08, justifyContent: 'center', paddingHorizontal: 58 },
+  badge: {
+    alignSelf: 'flex-start',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 7,
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+    borderRadius: 99,
+    marginBottom: 22,
+  },
+  badgeText: { fontSize: 12, fontWeight: '800' },
+  title: { fontSize: 46, lineHeight: 47, letterSpacing: -2.2, fontWeight: '900' },
+  titleWide: { fontSize: 66, lineHeight: 66, letterSpacing: -3.6 },
+  subtitle: { fontSize: 17, lineHeight: 26, marginTop: 20, maxWidth: 500 },
+  orderBox: {
+    marginTop: 28,
+    maxWidth: 520,
+    padding: 8,
+    borderRadius: 16,
+    gap: 8,
+    boxShadow: '0 6px 16px rgba(0, 0, 0, 0.10)',
+  },
+  tabs: { flexDirection: 'row', borderRadius: 10, padding: 3 },
+  tab: { flex: 1, paddingVertical: 11, borderRadius: 8, alignItems: 'center' },
+  tabText: { fontSize: 14, fontWeight: '700' },
+  orderButton: {
+    minHeight: 46,
+    borderRadius: 11,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+  },
+  orderText: { color: '#fff', fontSize: 15, fontWeight: '800' },
+  meta: { marginTop: 24, flexDirection: 'row', flexWrap: 'wrap', gap: 20 },
+  metaItem: { flexDirection: 'row', alignItems: 'center', gap: 7 },
+  metaText: { fontSize: 13 },
+  imageWrap: { height: 360 },
+  imageWide: { height: 'auto', flex: 0.92 },
+  image: { width: '100%', height: '100%' },
+  recommendation: {
+    position: 'absolute',
+    left: 18,
+    bottom: 18,
+    paddingHorizontal: 15,
+    paddingVertical: 11,
+    borderRadius: 12,
+    boxShadow: '0 4px 10px rgba(0, 0, 0, 0.14)',
+  },
+  recommendationLabel: { fontSize: 11, fontWeight: '800' },
+  recommendationName: { fontSize: 14, fontWeight: '700', marginTop: 2 },
+})

@@ -1,81 +1,144 @@
-import { useMemo } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { Search } from 'lucide-react'
+import { Search } from 'lucide-react-native'
+import { useMemo } from 'react'
+import {
+  ActivityIndicator,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
+  useWindowDimensions,
+} from 'react-native'
 import { categories, fetchMenu } from '../data/menu'
+import { useThemeStore } from '../store/useThemeStore'
+import { useColors } from '../theme'
 import { MenuCard } from './MenuCard'
-import { Button } from './ui/button'
 
-export const MenuSection = ({ category, setCategory, search, setSearch }) => {
+export const MenuSection = ({ category, setCategory, search, setSearch, searchRef }) => {
   const { data = [], isPending } = useQuery({ queryKey: ['menu'], queryFn: fetchMenu })
+  const colors = useColors(useThemeStore((state) => state.theme))
+  const { width } = useWindowDimensions()
+  const cardWidth = width >= 1080 ? '23.5%' : width >= 680 ? '48.5%' : '100%'
   const visible = useMemo(
     () =>
       data.filter((item) => {
         const matchesCategory = category === 'All' || item.category === category
-        const needle = search.toLowerCase()
-        return matchesCategory && `${item.name} ${item.description}`.toLowerCase().includes(needle)
+        return (
+          matchesCategory &&
+          `${item.name} ${item.description}`.toLowerCase().includes(search.toLowerCase())
+        )
       }),
     [data, category, search],
   )
+
   return (
-    <section
-      id="menu"
-      className="mx-auto max-w-7xl scroll-mt-24 px-4 py-20 sm:px-6 lg:px-8 lg:py-24"
-    >
-      <div className="flex flex-col justify-between gap-6 md:flex-row md:items-end">
-        <div>
-          <p className="eyebrow">Made fresh daily</p>
-          <h2 className="section-title">Popular dishes</h2>
-          <p className="mt-3 text-muted-foreground">Four favorites. No decision fatigue.</p>
-        </div>
-        <label className="flex h-12 w-full items-center gap-3 rounded-xl border border-input bg-card px-4 focus-within:border-primary focus-within:ring-1 focus-within:ring-primary md:w-72">
-          <Search size={18} className="text-muted-foreground" />
-          <input
-            id="menu-search"
+    <View style={[styles.section, { backgroundColor: colors.background }]}>
+      <View style={[styles.headingRow, width >= 700 && styles.headingRowWide]}>
+        <View>
+          <Text style={[styles.eyebrow, { color: colors.primary }]}>MADE FRESH DAILY</Text>
+          <Text style={[styles.heading, { color: colors.foreground }]}>Popular dishes</Text>
+          <Text style={[styles.subheading, { color: colors.mutedForeground }]}>
+            Four favorites. No decision fatigue.
+          </Text>
+        </View>
+        <View style={[styles.search, { backgroundColor: colors.card, borderColor: colors.border }]}>
+          <Search size={18} color={colors.mutedForeground} />
+          <TextInput
+            ref={searchRef}
             value={search}
-            onChange={(event) => setSearch(event.target.value)}
-            className="w-full bg-transparent text-sm outline-none placeholder:text-muted-foreground"
+            onChangeText={setSearch}
             placeholder="Search menu"
+            placeholderTextColor={colors.mutedForeground}
+            style={[styles.input, { color: colors.foreground }]}
+            returnKeyType="search"
           />
-        </label>
-      </div>
-      <div className="no-scrollbar -mx-4 mt-8 flex gap-2 overflow-x-auto px-4 pb-2 sm:mx-0 sm:px-0">
-        {categories.map((name) => (
-          <Button
-            key={name}
-            onClick={() => setCategory(name)}
-            variant={category === name ? 'default' : 'secondary'}
-          >
-            {name}
-          </Button>
-        ))}
-      </div>
+        </View>
+      </View>
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={styles.categories}
+      >
+        {categories.map((name) => {
+          const active = category === name
+          return (
+            <Pressable
+              key={name}
+              onPress={() => setCategory(name)}
+              style={[styles.category, { backgroundColor: active ? colors.primary : colors.muted }]}
+            >
+              <Text style={[styles.categoryText, { color: active ? '#fff' : colors.foreground }]}>
+                {name}
+              </Text>
+            </Pressable>
+          )
+        })}
+      </ScrollView>
       {isPending ? (
-        <div className="grid gap-6 pt-8 sm:grid-cols-2 lg:grid-cols-4">
-          {Array.from({ length: 4 }).map((_, index) => (
-            <div key={index} className="h-[430px] animate-pulse rounded-2xl bg-muted" />
-          ))}
-        </div>
+        <ActivityIndicator color={colors.primary} size="large" style={styles.loader} />
       ) : visible.length ? (
-        <div className="grid gap-6 pt-8 sm:grid-cols-2 lg:grid-cols-4">
+        <View style={styles.grid}>
           {visible.map((item) => (
-            <MenuCard key={item.id} item={item} />
+            <MenuCard key={item.id} item={item} width={cardWidth} />
           ))}
-        </div>
+        </View>
       ) : (
-        <div className="mt-8 rounded-2xl border border-dashed py-16 text-center">
-          <p className="text-xl font-semibold">No dishes found</p>
-          <Button
-            variant="ghost"
-            onClick={() => {
+        <View style={[styles.empty, { borderColor: colors.border }]}>
+          <Text style={[styles.emptyTitle, { color: colors.foreground }]}>No dishes found</Text>
+          <Pressable
+            onPress={() => {
               setSearch('')
               setCategory('All')
             }}
-            className="mt-2 text-primary"
           >
-            Clear filters
-          </Button>
-        </div>
+            <Text style={[styles.clear, { color: colors.primary }]}>Clear filters</Text>
+          </Pressable>
+        </View>
       )}
-    </section>
+    </View>
   )
 }
+
+const styles = StyleSheet.create({
+  section: {
+    width: '100%',
+    maxWidth: 1240,
+    alignSelf: 'center',
+    paddingHorizontal: 18,
+    paddingVertical: 72,
+  },
+  headingRow: { gap: 24 },
+  headingRowWide: { flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-between' },
+  eyebrow: { marginBottom: 8, fontSize: 12, fontWeight: '900', letterSpacing: 1.4 },
+  heading: { fontSize: 42, lineHeight: 48, fontWeight: '900', letterSpacing: -1.5 },
+  subheading: { fontSize: 15, marginTop: 8 },
+  search: {
+    width: '100%',
+    maxWidth: 320,
+    height: 48,
+    borderWidth: 1,
+    borderRadius: 12,
+    paddingHorizontal: 14,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  input: { flex: 1, height: '100%', fontSize: 14, outlineStyle: 'none' },
+  categories: { gap: 8, paddingVertical: 28 },
+  category: { paddingHorizontal: 18, paddingVertical: 11, borderRadius: 10 },
+  categoryText: { fontSize: 14, fontWeight: '800' },
+  grid: { flexDirection: 'row', flexWrap: 'wrap', gap: 18 },
+  loader: { paddingVertical: 90 },
+  empty: {
+    marginTop: 4,
+    borderWidth: 1,
+    borderStyle: 'dashed',
+    borderRadius: 16,
+    paddingVertical: 56,
+    alignItems: 'center',
+  },
+  emptyTitle: { fontSize: 20, fontWeight: '800' },
+  clear: { fontSize: 14, fontWeight: '800', marginTop: 10 },
+})
