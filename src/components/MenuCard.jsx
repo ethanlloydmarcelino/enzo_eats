@@ -7,7 +7,7 @@ import { useColors } from '../theme'
 import { useTranslations } from '../translations'
 
 export const MenuCard = ({ item, width }) => {
-  const [frame, setFrame] = useState({ width: 0, height: 0 })
+  const [selectedOption, setSelectedOption] = useState(item.options?.[0] ?? null)
   const favorites = useOrderStore((state) => state.favorites)
   const toggleFavorite = useOrderStore((state) => state.toggleFavorite)
   const addToCart = useOrderStore((state) => state.addToCart)
@@ -20,23 +20,8 @@ export const MenuCard = ({ item, width }) => {
     <View
       style={[styles.card, { width, backgroundColor: colors.card, borderColor: colors.border }]}
     >
-      <View
-        onLayout={(event) => setFrame(event.nativeEvent.layout)}
-        style={[styles.imageFrame, { backgroundColor: colors.muted }]}
-      >
-        {frame.width > 0 && (
-          <Image
-            source={item.image}
-            resizeMode="cover"
-            style={{
-              position: 'absolute',
-              width: frame.width * 2,
-              height: frame.height * 2,
-              left: -item.crop.x * frame.width,
-              top: -item.crop.y * frame.height,
-            }}
-          />
-        )}
+      <View style={[styles.imageFrame, { backgroundColor: colors.muted }]}>
+        <Image source={item.image} resizeMode="cover" style={styles.image} />
         {item.badge && (
           <View style={[styles.badge, { backgroundColor: colors.card }]}>
             <Text style={[styles.badgeText, { color: colors.foreground }]}>{t(item.badge)}</Text>
@@ -62,18 +47,57 @@ export const MenuCard = ({ item, width }) => {
             </Text>
             <Text style={[styles.name, { color: colors.foreground }]}>{itemName}</Text>
           </View>
-          <Text style={[styles.price, { color: colors.foreground }]}>${item.price}</Text>
+          <Text style={[styles.price, { color: colors.foreground }]}>₱{item.price}</Text>
         </View>
         <Text style={[styles.description, { color: colors.mutedForeground }]}>
           {item.description[language]}
         </Text>
+        {item.options && (
+          <View style={styles.options}>
+            <Text style={[styles.optionLabel, { color: colors.foreground }]}>
+              {t('chooseFlavor')}
+            </Text>
+            <View style={styles.optionList}>
+              {item.options.map((option) => {
+                const selected = selectedOption?.id === option.id
+                return (
+                  <Pressable
+                    key={option.id}
+                    accessibilityRole="radio"
+                    accessibilityState={{ checked: selected }}
+                    onPress={() => setSelectedOption(option)}
+                    style={[
+                      styles.option,
+                      {
+                        backgroundColor: selected ? colors.primary : colors.muted,
+                        borderColor: selected ? colors.primary : colors.border,
+                      },
+                    ]}
+                  >
+                    <Text
+                      style={[styles.optionText, { color: selected ? '#fff' : colors.foreground }]}
+                    >
+                      {option.name[language]}
+                    </Text>
+                  </Pressable>
+                )
+              })}
+            </View>
+          </View>
+        )}
         <View style={styles.bottom}>
           <View style={styles.rating}>
             <Star size={14} color={colors.coral} fill={colors.coral} />
             <Text style={[styles.ratingText, { color: colors.foreground }]}>{item.rating}</Text>
           </View>
           <Pressable
-            onPress={() => addToCart(item)}
+            onPress={() =>
+              addToCart({
+                ...item,
+                cartId: selectedOption ? `${item.id}:${selectedOption.id}` : String(item.id),
+                selectedOption,
+              })
+            }
             style={[styles.add, { backgroundColor: colors.primary }]}
           >
             <Plus size={15} color="#fff" />
@@ -88,6 +112,7 @@ export const MenuCard = ({ item, width }) => {
 const styles = StyleSheet.create({
   card: { minWidth: 250, borderWidth: 1, borderRadius: 18, overflow: 'hidden' },
   imageFrame: { width: '100%', aspectRatio: 4 / 3, overflow: 'hidden' },
+  image: { width: '100%', height: '100%' },
   badge: {
     position: 'absolute',
     left: 12,
@@ -116,6 +141,11 @@ const styles = StyleSheet.create({
   name: { fontSize: 18, fontWeight: '800', letterSpacing: -0.3, marginTop: 4 },
   price: { fontSize: 16, fontWeight: '800' },
   description: { fontSize: 14, lineHeight: 21, marginTop: 10, flex: 1 },
+  options: { marginTop: 16 },
+  optionLabel: { fontSize: 12, fontWeight: '800', marginBottom: 8 },
+  optionList: { flexDirection: 'row', flexWrap: 'wrap', gap: 7 },
+  option: { borderWidth: 1, borderRadius: 99, paddingHorizontal: 10, paddingVertical: 7 },
+  optionText: { fontSize: 11, fontWeight: '700' },
   bottom: {
     marginTop: 18,
     flexDirection: 'row',

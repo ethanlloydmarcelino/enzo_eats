@@ -1,63 +1,81 @@
-const mealImage = require('../../assets/images/filipino-rice-meals.png')
+const chickenPoppersImage = require('../../assets/images/chicken-poppers.png')
+const chickenTocinoImage = require('../../assets/images/chicken-tocino.png')
+const cordonBlueImage = require('../../assets/images/cordon-blue.png')
+const shomaiRiceImage = require('../../assets/images/shomai-rice-v2.png')
+const fruitSodaImage = require('../../assets/images/fruit-soda.png')
 
 const menu = [
   {
     id: 1,
-    name: { en: 'Shomai and Rice', tl: 'Siomai at Kanin' },
+    name: { en: 'Chicken Poppers', tl: 'Chicken Poppers' },
     description: {
-      en: 'Steamed pork shomai, white rice, and a savory soy-chili dipping sauce.',
-      tl: 'Steamed pork siomai, puting kanin, at malasang sawsawang toyo at sili.',
+      en: 'Crispy, bite-sized chicken poppers served hot and freshly cooked.',
+      tl: 'Malutong na chicken poppers na bagong luto at inihahain nang mainit.',
     },
-    price: 9,
-    category: 'riceMeal',
-    image: mealImage,
-    crop: { x: 0, y: 0 },
+    price: 60,
+    category: 'food',
+    image: chickenPoppersImage,
     badge: 'popular',
     rating: 4.9,
   },
   {
     id: 2,
-    name: { en: 'Chicken and Rice', tl: 'Manok at Kanin' },
+    name: { en: 'Chicken Tocino', tl: 'Chicken Tocino' },
     description: {
-      en: 'Crispy seasoned chicken served with a generous portion of white rice.',
-      tl: 'Malutong at tinimplahang manok na may masaganang puting kanin.',
+      en: 'Sweet and savory chicken tocino served as a satisfying rice meal.',
+      tl: 'Matamis at malasang chicken tocino na inihahain kasama ng kanin.',
     },
-    price: 12,
-    category: 'riceMeal',
-    image: mealImage,
-    crop: { x: 1, y: 0 },
+    price: 70,
+    category: 'food',
+    image: chickenTocinoImage,
     rating: 4.8,
   },
   {
     id: 3,
-    name: { en: 'Beef and Rice', tl: 'Baka at Kanin' },
+    name: { en: 'Cordon Blue', tl: 'Cordon Blue' },
     description: {
-      en: 'Tender savory beef with onions, scallions, and freshly steamed white rice.',
-      tl: 'Malambot at malasang baka na may sibuyas, dahon ng sibuyas, at bagong saing na kanin.',
+      en: 'A savory chicken wrap inspired by classic chicken cordon bleu.',
+      tl: 'Malasang chicken wrap na hango sa classic chicken cordon bleu.',
     },
-    price: 13,
-    category: 'riceMeal',
-    image: mealImage,
-    crop: { x: 0, y: 1 },
+    price: 70,
+    category: 'food',
+    image: cordonBlueImage,
     rating: 4.8,
   },
   {
     id: 4,
-    name: { en: 'Sisig and Rice', tl: 'Sisig at Kanin' },
+    name: { en: 'Shomai Rice', tl: 'Shomai Rice' },
     description: {
-      en: 'Sizzling chopped pork sisig with onions, chili, citrus, and white rice.',
-      tl: 'Mainit na pork sisig na may sibuyas, sili, kalamansi, at puting kanin.',
+      en: 'Steamed pork shomai stuffed with rice and served with a savory dipping sauce.',
+      tl: 'Steamed pork shomai na pinalamanan ng kanin at may malasang sawsawan.',
     },
-    price: 11,
-    category: 'riceMeal',
-    image: mealImage,
-    crop: { x: 1, y: 1 },
+    price: 60,
+    category: 'food',
+    image: shomaiRiceImage,
     badge: 'bestSeller',
     rating: 4.9,
   },
+  {
+    id: 5,
+    name: { en: 'Fruit Soda', tl: 'Fruit Soda' },
+    description: {
+      en: 'A sparkling fruit soda made fresh in your choice of flavor.',
+      tl: 'Nakakapreskong fruit soda na bagong gawa sa flavor na gusto mo.',
+    },
+    price: 39,
+    category: 'drink',
+    image: fruitSodaImage,
+    options: [
+      { id: 'blueberry', name: { en: 'Blueberry', tl: 'Blueberry' } },
+      { id: 'strawberry', name: { en: 'Strawberry', tl: 'Strawberry' } },
+      { id: 'green-apple', name: { en: 'Green Apple', tl: 'Green Apple' } },
+      { id: 'lychee', name: { en: 'Lychee', tl: 'Lychee' } },
+    ],
+    rating: 4.8,
+  },
 ]
 
-export const categories = ['all', 'riceMeal']
+export const categories = ['all', 'food', 'drink']
 
 // Replace this function with an Amplify Data query later. The React Query consumer stays the same.
 export const fetchMenu = async () => {

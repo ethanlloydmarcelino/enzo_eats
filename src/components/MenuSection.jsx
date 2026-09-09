@@ -27,9 +27,10 @@ export const MenuSection = ({ category, setCategory, search, setSearch, searchRe
     () =>
       data.filter((item) => {
         const matchesCategory = category === 'all' || item.category === category
+        const optionNames = item.options?.map((option) => option.name[language]).join(' ') ?? ''
         return (
           matchesCategory &&
-          `${item.name[language]} ${item.description[language]}`
+          `${item.name[language]} ${item.description[language]} ${optionNames}`
             .toLowerCase()
             .includes(search.toLowerCase())
         )

@@ -1,4 +1,4 @@
-import { Headphones } from 'lucide-react-native'
+import { Headphones, MapPin, Phone } from 'lucide-react-native'
 import { StyleSheet, Text, View, useWindowDimensions } from 'react-native'
 import Svg, { Circle, Rect } from 'react-native-svg'
 import { Logo } from './Logo'
@@ -29,9 +29,19 @@ export const Footer = () => {
         </View>
         <View style={styles.column}>
           <Text style={styles.heading}>{t('support')}</Text>
-          <View style={styles.support}>
-            <Headphones size={17} color="#999" />
-            <Text style={styles.supportText}>{t('contactSupport')}</Text>
+          <View style={styles.contactList}>
+            <View style={styles.support}>
+              <Phone size={17} color="#999" />
+              <Text style={styles.supportText}>+63-0927-065-0368</Text>
+            </View>
+            <View style={styles.support}>
+              <MapPin size={17} color="#999" />
+              <Text style={styles.supportText}>Quatarman Northern Samar, Philippines</Text>
+            </View>
+            <View style={styles.support}>
+              <Headphones size={17} color="#999" />
+              <Text style={styles.supportText}>{t('contactSupport')}</Text>
+            </View>
           </View>
         </View>
       </View>
@@ -51,6 +61,7 @@ const styles = StyleSheet.create({
   copy: { color: '#999', fontSize: 14, lineHeight: 22, maxWidth: 300, marginTop: 15 },
   heading: { color: '#fff', fontSize: 14, fontWeight: '800', marginBottom: 12 },
   line: { color: '#999', fontSize: 14, marginTop: 5 },
+  contactList: { gap: 10 },
   support: { flexDirection: 'row', gap: 8, alignItems: 'flex-start' },
   supportText: { color: '#999', fontSize: 14, flex: 1 },
   bottom: {

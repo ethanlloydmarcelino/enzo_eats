@@ -13,19 +13,21 @@ export const useOrderStore = create((set) => ({
     })),
   addToCart: (item) =>
     set((state) => {
-      const found = state.cart.find((entry) => entry.id === item.id)
+      const found = state.cart.find((entry) => entry.cartId === item.cartId)
       return {
         cart: found
           ? state.cart.map((entry) =>
-              entry.id === item.id ? { ...entry, quantity: entry.quantity + 1 } : entry,
+              entry.cartId === item.cartId ? { ...entry, quantity: entry.quantity + 1 } : entry,
             )
           : [...state.cart, { ...item, quantity: 1 }],
       }
     }),
-  changeQuantity: (id, amount) =>
+  changeQuantity: (cartId, amount) =>
     set((state) => ({
       cart: state.cart
-        .map((entry) => (entry.id === id ? { ...entry, quantity: entry.quantity + amount } : entry))
+        .map((entry) =>
+          entry.cartId === cartId ? { ...entry, quantity: entry.quantity + amount } : entry,
+        )
         .filter((entry) => entry.quantity > 0),
     })),
   clearCart: () => set({ cart: [] }),

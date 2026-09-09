@@ -1,8 +1,10 @@
 import { useEffect, useState } from 'react'
-import { ActivityIndicator, Animated, StyleSheet, Text, View } from 'react-native'
+import { ActivityIndicator, Animated, Platform, StyleSheet, Text, View } from 'react-native'
 import { useThemeStore } from '../store/useThemeStore'
 import { useColors } from '../theme'
 import { useTranslations } from '../translations'
+
+const useNativeDriver = Platform.OS !== 'web'
 
 export const LaunchScreen = ({ ready, onFinished }) => {
   const colors = useColors(useThemeStore((state) => state.theme))
@@ -16,14 +18,14 @@ export const LaunchScreen = ({ ready, onFinished }) => {
       Animated.timing(logoOpacity, {
         toValue: 1,
         duration: 350,
-        useNativeDriver: true,
+        useNativeDriver,
       }),
       Animated.spring(logoScale, {
         toValue: 1,
         damping: 10,
         stiffness: 130,
         mass: 0.8,
-        useNativeDriver: true,
+        useNativeDriver,
       }),
     ]).start()
   }, [logoOpacity, logoScale])
@@ -36,7 +38,7 @@ export const LaunchScreen = ({ ready, onFinished }) => {
       Animated.timing(opacity, {
         toValue: 0,
         duration: 280,
-        useNativeDriver: true,
+        useNativeDriver,
       }),
     ]).start(({ finished }) => {
       if (finished) onFinished()

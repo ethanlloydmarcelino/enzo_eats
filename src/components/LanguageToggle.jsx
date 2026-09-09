@@ -6,7 +6,7 @@ import { useColors } from '../theme'
 import { useTranslations } from '../translations'
 
 const UnitedStatesFlag = () => (
-  <Svg width={25} height={17} viewBox="0 0 30 20" accessibilityElementsHidden>
+  <Svg width={25} height={17} viewBox="0 0 30 20">
     <Defs>
       <ClipPath id="usFlagClip">
         <Rect width="30" height="20" rx="2" />
@@ -26,7 +26,7 @@ const UnitedStatesFlag = () => (
 )
 
 const PhilippinesFlag = () => (
-  <Svg width={25} height={17} viewBox="0 0 30 20" accessibilityElementsHidden>
+  <Svg width={25} height={17} viewBox="0 0 30 20">
     <Defs>
       <ClipPath id="phFlagClip">
         <Rect width="30" height="20" rx="2" />

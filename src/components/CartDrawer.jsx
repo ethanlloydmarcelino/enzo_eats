@@ -22,7 +22,6 @@ export const CartDrawer = () => {
   const insets = useSafeAreaInsets()
   const { width } = useWindowDimensions()
   const subtotal = cart.reduce((sum, item) => sum + item.price * item.quantity, 0)
-  const service = subtotal ? 2.5 : 0
 
   return (
     <Modal
@@ -76,7 +75,10 @@ export const CartDrawer = () => {
             <>
               <ScrollView contentContainerStyle={styles.items}>
                 {cart.map((item) => (
-                  <View key={item.id} style={[styles.item, { borderBottomColor: colors.border }]}>
+                  <View
+                    key={item.cartId}
+                    style={[styles.item, { borderBottomColor: colors.border }]}
+                  >
                     <Image source={item.image} style={styles.itemImage} resizeMode="cover" />
                     <View style={styles.itemCopy}>
                       <View style={styles.itemTitleRow}>
@@ -84,16 +86,18 @@ export const CartDrawer = () => {
                           {item.name[language]}
                         </Text>
                         <Text style={[styles.itemPrice, { color: colors.foreground }]}>
-                          ${item.price * item.quantity}
+                          ₱{item.price * item.quantity}
                         </Text>
                       </View>
                       <Text style={[styles.itemCategory, { color: colors.mutedForeground }]}>
-                        {t(item.category)}
+                        {item.selectedOption
+                          ? `${t(item.category)} · ${item.selectedOption.name[language]}`
+                          : t(item.category)}
                       </Text>
                       <View style={[styles.quantity, { borderColor: colors.border }]}>
                         <Pressable
                           accessibilityLabel={t('removeOne', { name: item.name[language] })}
-                          onPress={() => changeQuantity(item.id, -1)}
+                          onPress={() => changeQuantity(item.cartId, -1)}
                           style={styles.quantityButton}
                         >
                           <Minus size={14} color={colors.foreground} />
@@ -103,7 +107,7 @@ export const CartDrawer = () => {
                         </Text>
                         <Pressable
                           accessibilityLabel={t('addOne', { name: item.name[language] })}
-                          onPress={() => changeQuantity(item.id, 1)}
+                          onPress={() => changeQuantity(item.cartId, 1)}
                           style={styles.quantityButton}
                         >
                           <Plus size={14} color={colors.foreground} />
@@ -116,16 +120,12 @@ export const CartDrawer = () => {
               <View style={[styles.summary, { borderTopColor: colors.border }]}>
                 <View style={styles.summaryRow}>
                   <Text style={{ color: colors.mutedForeground }}>{t('subtotal')}</Text>
-                  <Text style={{ color: colors.mutedForeground }}>${subtotal.toFixed(2)}</Text>
-                </View>
-                <View style={styles.summaryRow}>
-                  <Text style={{ color: colors.mutedForeground }}>{t('serviceFee')}</Text>
-                  <Text style={{ color: colors.mutedForeground }}>${service.toFixed(2)}</Text>
+                  <Text style={{ color: colors.mutedForeground }}>₱{subtotal.toFixed(2)}</Text>
                 </View>
                 <View style={[styles.summaryRow, styles.totalRow]}>
                   <Text style={[styles.total, { color: colors.foreground }]}>{t('total')}</Text>
                   <Text style={[styles.total, { color: colors.foreground }]}>
-                    ${(subtotal + service).toFixed(2)}
+                    ₱{subtotal.toFixed(2)}
                   </Text>
                 </View>
                 <Pressable style={[styles.checkout, { backgroundColor: colors.primary }]}>
