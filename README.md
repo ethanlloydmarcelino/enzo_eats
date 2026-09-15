@@ -56,6 +56,6 @@ This provisions a per-developer copy of the backend and writes `amplify_outputs.
 
 Native builds (iOS/Android) are not part of Amplify Hosting — those still go through EAS Build or a manual `expo run:android`/`expo run:ios` release pipeline.
 
-## Code standards
+## Code standards.
 
 Components use arrow functions and React Native `StyleSheet` styles. Run `npm run format` before committing and `npm run format:check` in CI.
