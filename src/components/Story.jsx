@@ -1,6 +1,7 @@
 import { Clock3, Leaf, Sparkles } from 'lucide-react-native'
 import { StyleSheet, Text, View, useWindowDimensions } from 'react-native'
 import { useThemeStore } from '../store/useThemeStore'
+import { fonts } from '../fonts'
 import { useColors } from '../theme'
 import { useTranslations } from '../translations'
 
@@ -76,13 +77,13 @@ const styles = StyleSheet.create({
     paddingVertical: 72,
   },
   intro: { maxWidth: 700 },
-  eyebrow: { fontSize: 12, fontWeight: '900', letterSpacing: 1.4, marginBottom: 8 },
-  title: { fontSize: 42, lineHeight: 48, fontWeight: '900', letterSpacing: -1.5 },
+  eyebrow: { fontSize: 12, fontFamily: fonts.black, letterSpacing: 1.4, marginBottom: 8 },
+  title: { fontSize: 42, lineHeight: 48, fontFamily: fonts.black, letterSpacing: -1.5 },
   subtitle: { fontSize: 17, lineHeight: 27, marginTop: 14 },
   cards: { marginTop: 34, gap: 16 },
   cardsWide: { flexDirection: 'row' },
   card: { flex: 1, borderWidth: 1, borderRadius: 17, padding: 24 },
   icon: { width: 44, height: 44, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
-  cardTitle: { fontSize: 18, fontWeight: '800', marginTop: 20 },
+  cardTitle: { fontSize: 18, fontFamily: fonts.extraBold, marginTop: 20 },
   cardText: { fontSize: 14, lineHeight: 22, marginTop: 8 },
 })

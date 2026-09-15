@@ -4,7 +4,9 @@ export const useOrderStore = create((set) => ({
   cartOpen: false,
   cart: [],
   favorites: [],
+  paymentMethod: 'cash',
   setCartOpen: (cartOpen) => set({ cartOpen }),
+  setPaymentMethod: (paymentMethod) => set({ paymentMethod }),
   toggleFavorite: (id) =>
     set((state) => ({
       favorites: state.favorites.includes(id)
@@ -30,5 +32,5 @@ export const useOrderStore = create((set) => ({
         )
         .filter((entry) => entry.quantity > 0),
     })),
-  clearCart: () => set({ cart: [] }),
+  clearCart: () => set({ cart: [], paymentMethod: 'cash' }),
 }))

@@ -1,5 +1,6 @@
 import { ArrowRight, Clock3, MapPin, Sparkles, Star } from 'lucide-react-native'
 import { Image, Pressable, StyleSheet, Text, View, useWindowDimensions } from 'react-native'
+import { fonts } from '../fonts'
 import { useThemeStore } from '../store/useThemeStore'
 import { useColors } from '../theme'
 import { useTranslations } from '../translations'
@@ -93,8 +94,8 @@ const styles = StyleSheet.create({
     borderRadius: 99,
     marginBottom: 22,
   },
-  badgeText: { fontSize: 12, fontWeight: '800' },
-  title: { fontSize: 46, lineHeight: 47, letterSpacing: -2.2, fontWeight: '900' },
+  badgeText: { fontSize: 12, fontFamily: fonts.extraBold },
+  title: { fontSize: 46, lineHeight: 47, letterSpacing: -2.2, fontFamily: fonts.black },
   titleWide: { fontSize: 66, lineHeight: 66, letterSpacing: -3.6 },
   subtitle: { fontSize: 17, lineHeight: 26, marginTop: 20, maxWidth: 500 },
   orderBox: {
@@ -113,7 +114,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: 8,
   },
-  orderText: { color: '#fff', fontSize: 15, fontWeight: '800' },
+  orderText: { color: '#fff', fontSize: 15, fontFamily: fonts.extraBold },
   meta: { marginTop: 24, flexDirection: 'row', flexWrap: 'wrap', gap: 20 },
   metaItem: { flexDirection: 'row', alignItems: 'center', gap: 7 },
   metaText: { fontSize: 13 },
@@ -129,6 +130,6 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     boxShadow: '0 4px 10px rgba(0, 0, 0, 0.14)',
   },
-  recommendationLabel: { fontSize: 11, fontWeight: '800' },
-  recommendationName: { fontSize: 14, fontWeight: '700', marginTop: 2 },
+  recommendationLabel: { fontSize: 11, fontFamily: fonts.extraBold },
+  recommendationName: { fontSize: 14, fontFamily: fonts.bold, marginTop: 2 },
 })

@@ -1,6 +1,7 @@
 import { Heart, Plus, Star } from 'lucide-react-native'
 import { useState } from 'react'
 import { Image, Pressable, StyleSheet, Text, View } from 'react-native'
+import { fonts } from '../fonts'
 import { useOrderStore } from '../store/useOrderStore'
 import { useThemeStore } from '../store/useThemeStore'
 import { useColors } from '../theme'
@@ -122,7 +123,7 @@ const styles = StyleSheet.create({
     borderRadius: 99,
     elevation: 2,
   },
-  badgeText: { fontSize: 11, fontWeight: '800' },
+  badgeText: { fontSize: 11, fontFamily: fonts.extraBold },
   favorite: {
     position: 'absolute',
     right: 12,
@@ -137,15 +138,15 @@ const styles = StyleSheet.create({
   content: { padding: 18, minHeight: 220 },
   titleRow: { flexDirection: 'row', justifyContent: 'space-between', gap: 12 },
   titleCopy: { flex: 1 },
-  category: { fontSize: 11, fontWeight: '600' },
-  name: { fontSize: 18, fontWeight: '800', letterSpacing: -0.3, marginTop: 4 },
-  price: { fontSize: 16, fontWeight: '800' },
+  category: { fontSize: 11, fontFamily: fonts.semiBold },
+  name: { fontSize: 18, fontFamily: fonts.extraBold, letterSpacing: -0.3, marginTop: 4 },
+  price: { fontSize: 16, fontFamily: fonts.extraBold },
   description: { fontSize: 14, lineHeight: 21, marginTop: 10, flex: 1 },
   options: { marginTop: 16 },
-  optionLabel: { fontSize: 12, fontWeight: '800', marginBottom: 8 },
+  optionLabel: { fontSize: 12, fontFamily: fonts.extraBold, marginBottom: 8 },
   optionList: { flexDirection: 'row', flexWrap: 'wrap', gap: 7 },
   option: { borderWidth: 1, borderRadius: 99, paddingHorizontal: 10, paddingVertical: 7 },
-  optionText: { fontSize: 11, fontWeight: '700' },
+  optionText: { fontSize: 11, fontFamily: fonts.bold },
   bottom: {
     marginTop: 18,
     flexDirection: 'row',
@@ -153,7 +154,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   rating: { flexDirection: 'row', alignItems: 'center', gap: 5 },
-  ratingText: { fontSize: 13, fontWeight: '700' },
+  ratingText: { fontSize: 13, fontFamily: fonts.bold },
   add: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -162,5 +163,5 @@ const styles = StyleSheet.create({
     paddingHorizontal: 13,
     paddingVertical: 9,
   },
-  addText: { color: '#fff', fontWeight: '800', fontSize: 13 },
+  addText: { color: '#fff', fontFamily: fonts.extraBold, fontSize: 13 },
 })

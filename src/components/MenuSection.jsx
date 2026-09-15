@@ -12,6 +12,7 @@ import {
   useWindowDimensions,
 } from 'react-native'
 import { categories, fetchMenu } from '../data/menu'
+import { fonts } from '../fonts'
 import { useThemeStore } from '../store/useThemeStore'
 import { useColors } from '../theme'
 import { MenuCard } from './MenuCard'
@@ -116,8 +117,8 @@ const styles = StyleSheet.create({
   },
   headingRow: { gap: 24 },
   headingRowWide: { flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-between' },
-  eyebrow: { marginBottom: 8, fontSize: 12, fontWeight: '900', letterSpacing: 1.4 },
-  heading: { fontSize: 42, lineHeight: 48, fontWeight: '900', letterSpacing: -1.5 },
+  eyebrow: { marginBottom: 8, fontSize: 12, fontFamily: fonts.black, letterSpacing: 1.4 },
+  heading: { fontSize: 42, lineHeight: 48, fontFamily: fonts.black, letterSpacing: -1.5 },
   subheading: { fontSize: 15, marginTop: 8 },
   search: {
     width: '100%',
@@ -133,7 +134,7 @@ const styles = StyleSheet.create({
   input: { flex: 1, height: '100%', fontSize: 14, outlineStyle: 'none' },
   categories: { gap: 8, paddingVertical: 28 },
   category: { paddingHorizontal: 18, paddingVertical: 11, borderRadius: 10 },
-  categoryText: { fontSize: 14, fontWeight: '800' },
+  categoryText: { fontSize: 14, fontFamily: fonts.extraBold },
   grid: { flexDirection: 'row', flexWrap: 'wrap', gap: 18 },
   loader: { paddingVertical: 90 },
   empty: {
@@ -144,6 +145,6 @@ const styles = StyleSheet.create({
     paddingVertical: 56,
     alignItems: 'center',
   },
-  emptyTitle: { fontSize: 20, fontWeight: '800' },
-  clear: { fontSize: 14, fontWeight: '800', marginTop: 10 },
+  emptyTitle: { fontSize: 20, fontFamily: fonts.extraBold },
+  clear: { fontSize: 14, fontFamily: fonts.extraBold, marginTop: 10 },
 })

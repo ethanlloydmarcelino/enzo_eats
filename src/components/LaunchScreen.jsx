@@ -1,5 +1,8 @@
+import { Leaf } from 'lucide-react-native'
 import { useEffect, useState } from 'react'
 import { ActivityIndicator, Animated, Platform, StyleSheet, Text, View } from 'react-native'
+import { BrandMark } from './BrandMark'
+import { fonts } from '../fonts'
 import { useThemeStore } from '../store/useThemeStore'
 import { useColors } from '../theme'
 import { useTranslations } from '../translations'
@@ -54,8 +57,13 @@ export const LaunchScreen = ({ ready, onFinished }) => {
       <Animated.View
         style={[styles.brand, { opacity: logoOpacity, transform: [{ scale: logoScale }] }]}
       >
-        <View style={[styles.mark, { backgroundColor: colors.primary }]}>
-          <Text style={styles.markText}>E</Text>
+        <View style={styles.markWrap}>
+          <View style={[styles.mark, { backgroundColor: colors.primary }]}>
+            <BrandMark size={26} color="#fff" />
+          </View>
+          <View style={[styles.leaf, { backgroundColor: colors.coral, borderColor: colors.background }]}>
+            <Leaf size={13} color="#fff" strokeWidth={2.75} />
+          </View>
         </View>
         <Text style={[styles.name, { color: colors.ink }]}>Enzo</Text>
         <Text style={[styles.name, { color: colors.primary }]}>Eats</Text>
@@ -76,17 +84,27 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  brand: { flexDirection: 'row', alignItems: 'center', gap: 7 },
+  brand: { flexDirection: 'row', alignItems: 'center', gap: 11 },
+  markWrap: { width: 52, height: 52 },
   mark: {
     width: 52,
     height: 52,
-    borderRadius: 14,
+    borderRadius: 17,
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: 4,
   },
-  markText: { color: '#fff', fontSize: 25, fontWeight: '900' },
-  name: { fontSize: 31, fontWeight: '900', letterSpacing: -1.3 },
+  leaf: {
+    position: 'absolute',
+    top: -6,
+    right: -6,
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    borderWidth: 2.5,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  name: { fontSize: 31, fontFamily: fonts.black, letterSpacing: -1.3 },
   spinner: { marginTop: 34 },
-  loadingText: { marginTop: 12, fontSize: 13, fontWeight: '600' },
+  loadingText: { marginTop: 12, fontSize: 13, fontFamily: fonts.semiBold },
 })

@@ -1,5 +1,6 @@
 import { Home, Search, ShoppingBag, Utensils } from 'lucide-react-native'
 import { Pressable, StyleSheet, Text, View, useWindowDimensions } from 'react-native'
+import { fonts } from '../fonts'
 import { useOrderStore } from '../store/useOrderStore'
 import { useThemeStore } from '../store/useThemeStore'
 import { useColors } from '../theme'
@@ -51,5 +52,5 @@ const styles = StyleSheet.create({
     elevation: 12,
   },
   item: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 4 },
-  label: { fontSize: 10, fontWeight: '800' },
+  label: { fontSize: 10, fontFamily: fonts.extraBold },
 })

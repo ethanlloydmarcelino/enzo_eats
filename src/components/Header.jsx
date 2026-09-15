@@ -4,6 +4,7 @@ import { Logo } from './Logo'
 import { useOrderStore } from '../store/useOrderStore'
 import { ThemeToggle } from './ThemeToggle'
 import { LanguageToggle } from './LanguageToggle'
+import { fonts } from '../fonts'
 import { useThemeStore } from '../store/useThemeStore'
 import { useColors } from '../theme'
 import { useTranslations } from '../translations'
@@ -80,7 +81,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   nav: { flexDirection: 'row', gap: 28 },
-  navText: { fontSize: 14, fontWeight: '700' },
+  navText: { fontSize: 14, fontFamily: fonts.bold },
   actions: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   iconButton: { width: 42, height: 42, alignItems: 'center', justifyContent: 'center' },
   bag: {
@@ -91,7 +92,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 8,
   },
-  bagText: { fontSize: 14, fontWeight: '700' },
+  bagText: { fontSize: 14, fontFamily: fonts.bold },
   count: {
     minWidth: 20,
     height: 20,
@@ -100,5 +101,5 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  countText: { color: '#fff', fontSize: 11, fontWeight: '800' },
+  countText: { color: '#fff', fontSize: 11, fontFamily: fonts.extraBold },
 })

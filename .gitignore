@@ -9,3 +9,7 @@ ios/
 !.env.example
 *.local
 *.log
+
+# Amplify Gen 2
+amplify_outputs.json
+.amplify/

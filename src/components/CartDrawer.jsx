@@ -1,6 +1,7 @@
-import { Minus, Plus, ShoppingBag, X } from 'lucide-react-native'
+import { Banknote, Globe, Minus, Plus, ShoppingBag, Smartphone, X } from 'lucide-react-native'
 import {
   Image,
+  Linking,
   Modal,
   Pressable,
   ScrollView,
@@ -10,18 +11,44 @@ import {
   useWindowDimensions,
 } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
+import { fonts } from '../fonts'
 import { useOrderStore } from '../store/useOrderStore'
 import { useThemeStore } from '../store/useThemeStore'
 import { useColors } from '../theme'
 import { useTranslations } from '../translations'
 
+// Each e-wallet's own brand color, used regardless of app theme so an option
+// reads as that wallet rather than as another primary-colored app control.
+const GCASH_BLUE = '#0072CE'
+const PAYPAL_BLUE = '#0070BA'
+// Placeholder merchant details — swap for Enzo Eats' real accounts before launch.
+const GCASH_NUMBER = '0917 123 4567'
+const GCASH_NAME = 'Enzo Eats'
+const PAYPAL_EMAIL = 'pay@enzoeats.ph'
+const PAYPAL_ME_LINK = 'https://paypal.me/EnzoEats'
+
 export const CartDrawer = () => {
-  const { cart, cartOpen, setCartOpen, changeQuantity, clearCart } = useOrderStore()
+  const { cart, cartOpen, setCartOpen, changeQuantity, clearCart, paymentMethod, setPaymentMethod } =
+    useOrderStore()
   const colors = useColors(useThemeStore((state) => state.theme))
   const { language, t } = useTranslations()
   const insets = useSafeAreaInsets()
   const { width } = useWindowDimensions()
   const subtotal = cart.reduce((sum, item) => sum + item.price * item.quantity, 0)
+
+  const paymentMethods = [
+    { id: 'cash', label: t('payCash'), Icon: Banknote, accent: colors.primary },
+    { id: 'gcash', label: t('payGcash'), Icon: Smartphone, accent: GCASH_BLUE },
+    { id: 'paypal', label: t('payPaypal'), Icon: Globe, accent: PAYPAL_BLUE },
+  ]
+  const checkoutAccent =
+    paymentMethods.find((method) => method.id === paymentMethod)?.accent ?? colors.primary
+  const checkoutLabel =
+    paymentMethod === 'gcash'
+      ? t('continueGcash')
+      : paymentMethod === 'paypal'
+        ? t('continuePaypal')
+        : t('pickupCheckout')
 
   return (
     <Modal
@@ -128,8 +155,103 @@ export const CartDrawer = () => {
                     ₱{subtotal.toFixed(2)}
                   </Text>
                 </View>
-                <Pressable style={[styles.checkout, { backgroundColor: colors.primary }]}>
-                  <Text style={styles.checkoutText}>{t('pickupCheckout')}</Text>
+                <View style={styles.paymentSection}>
+                  <Text style={[styles.paymentLabel, { color: colors.mutedForeground }]}>
+                    {t('paymentMethod')}
+                  </Text>
+                  <View style={styles.paymentOptions}>
+                    {paymentMethods.map(({ id, label, Icon, accent }) => {
+                      const active = paymentMethod === id
+                      return (
+                        <Pressable
+                          key={id}
+                          onPress={() => setPaymentMethod(id)}
+                          style={[
+                            styles.paymentOption,
+                            {
+                              borderColor: active ? accent : colors.border,
+                              backgroundColor: active ? `${accent}14` : colors.card,
+                            },
+                          ]}
+                        >
+                          <Icon size={18} color={active ? accent : colors.mutedForeground} />
+                          <Text
+                            style={[
+                              styles.paymentOptionText,
+                              { color: active ? accent : colors.foreground },
+                            ]}
+                          >
+                            {label}
+                          </Text>
+                        </Pressable>
+                      )
+                    })}
+                  </View>
+                  {paymentMethod === 'gcash' && (
+                    <View
+                      style={[
+                        styles.walletCard,
+                        { borderColor: GCASH_BLUE, backgroundColor: `${GCASH_BLUE}0d` },
+                      ]}
+                    >
+                      <Text style={[styles.walletText, { color: colors.foreground }]}>
+                        {t('gcashInstructions', { amount: subtotal.toFixed(2) })}
+                      </Text>
+                      <View style={styles.walletRow}>
+                        <Text style={[styles.walletRowLabel, { color: colors.mutedForeground }]}>
+                          {t('gcashNumber')}
+                        </Text>
+                        <Text
+                          selectable
+                          style={[styles.walletRowValue, { color: colors.foreground }]}
+                        >
+                          {GCASH_NUMBER}
+                        </Text>
+                      </View>
+                      <View style={styles.walletRow}>
+                        <Text style={[styles.walletRowLabel, { color: colors.mutedForeground }]}>
+                          {t('gcashAccountName')}
+                        </Text>
+                        <Text style={[styles.walletRowValue, { color: colors.foreground }]}>
+                          {GCASH_NAME}
+                        </Text>
+                      </View>
+                    </View>
+                  )}
+                  {paymentMethod === 'paypal' && (
+                    <View
+                      style={[
+                        styles.walletCard,
+                        { borderColor: PAYPAL_BLUE, backgroundColor: `${PAYPAL_BLUE}0d` },
+                      ]}
+                    >
+                      <Text style={[styles.walletText, { color: colors.foreground }]}>
+                        {t('paypalInstructions', { amount: subtotal.toFixed(2) })}
+                      </Text>
+                      <View style={styles.walletRow}>
+                        <Text style={[styles.walletRowLabel, { color: colors.mutedForeground }]}>
+                          {t('paypalAccount')}
+                        </Text>
+                        <Text
+                          selectable
+                          style={[styles.walletRowValue, { color: colors.foreground }]}
+                        >
+                          {PAYPAL_EMAIL}
+                        </Text>
+                      </View>
+                      <Pressable
+                        onPress={() => Linking.openURL(PAYPAL_ME_LINK)}
+                        style={[styles.walletButton, { borderColor: PAYPAL_BLUE }]}
+                      >
+                        <Text style={[styles.walletButtonText, { color: PAYPAL_BLUE }]}>
+                          {t('openPaypal')}
+                        </Text>
+                      </Pressable>
+                    </View>
+                  )}
+                </View>
+                <Pressable style={[styles.checkout, { backgroundColor: checkoutAccent }]}>
+                  <Text style={styles.checkoutText}>{checkoutLabel}</Text>
                 </Pressable>
                 <Pressable onPress={clearCart}>
                   <Text style={[styles.clear, { color: colors.mutedForeground }]}>
@@ -164,7 +286,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
   },
-  title: { fontSize: 24, fontWeight: '900', letterSpacing: -0.7 },
+  title: { fontSize: 24, fontFamily: fonts.black, letterSpacing: -0.7 },
   description: { fontSize: 13, marginTop: 4 },
   close: {
     width: 38,
@@ -174,10 +296,10 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   empty: { minHeight: 420, alignItems: 'center', justifyContent: 'center', padding: 30 },
-  emptyTitle: { fontSize: 24, fontWeight: '900', marginTop: 18 },
+  emptyTitle: { fontSize: 24, fontFamily: fonts.black, marginTop: 18 },
   emptyText: { fontSize: 14, marginTop: 8 },
   primary: { marginTop: 24, borderRadius: 10, paddingHorizontal: 20, paddingVertical: 13 },
-  primaryText: { color: '#fff', fontWeight: '800' },
+  primaryText: { color: '#fff', fontFamily: fonts.extraBold },
   items: { padding: 20 },
   item: {
     flexDirection: 'row',
@@ -188,8 +310,8 @@ const styles = StyleSheet.create({
   itemImage: { width: 78, height: 78, borderRadius: 12 },
   itemCopy: { flex: 1 },
   itemTitleRow: { flexDirection: 'row', justifyContent: 'space-between', gap: 8 },
-  itemName: { flex: 1, fontSize: 15, fontWeight: '800' },
-  itemPrice: { fontSize: 14, fontWeight: '800' },
+  itemName: { flex: 1, fontSize: 15, fontFamily: fonts.extraBold },
+  itemPrice: { fontSize: 14, fontFamily: fonts.extraBold },
   itemCategory: { fontSize: 11, marginTop: 4 },
   quantity: {
     alignSelf: 'flex-start',
@@ -200,12 +322,47 @@ const styles = StyleSheet.create({
     marginTop: 10,
   },
   quantityButton: { padding: 7 },
-  quantityText: { minWidth: 24, textAlign: 'center', fontSize: 12, fontWeight: '800' },
+  quantityText: { minWidth: 24, textAlign: 'center', fontSize: 12, fontFamily: fonts.extraBold },
   summary: { padding: 20, borderTopWidth: StyleSheet.hairlineWidth },
   summaryRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 9 },
   totalRow: { marginTop: 8, marginBottom: 18 },
-  total: { fontSize: 20, fontWeight: '900' },
+  total: { fontSize: 20, fontFamily: fonts.black },
+  paymentSection: { marginBottom: 16 },
+  paymentLabel: {
+    fontSize: 11,
+    fontFamily: fonts.extraBold,
+    letterSpacing: 0.4,
+    marginBottom: 8,
+    textTransform: 'uppercase',
+  },
+  paymentOptions: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
+  paymentOption: {
+    flexGrow: 1,
+    flexBasis: '30%',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    borderWidth: 1.5,
+    borderRadius: 11,
+    paddingVertical: 12,
+    paddingHorizontal: 6,
+  },
+  paymentOptionText: { fontSize: 13, fontFamily: fonts.extraBold, textAlign: 'center' },
+  walletCard: { borderWidth: 1, borderRadius: 12, padding: 14, marginTop: 12, gap: 8 },
+  walletText: { fontSize: 12, lineHeight: 18 },
+  walletRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  walletRowLabel: { fontSize: 11 },
+  walletRowValue: { fontSize: 13, fontFamily: fonts.extraBold },
+  walletButton: {
+    borderWidth: 1.5,
+    borderRadius: 9,
+    paddingVertical: 10,
+    alignItems: 'center',
+    marginTop: 2,
+  },
+  walletButtonText: { fontSize: 13, fontFamily: fonts.extraBold },
   checkout: { minHeight: 50, borderRadius: 11, alignItems: 'center', justifyContent: 'center' },
-  checkoutText: { color: '#fff', fontWeight: '800' },
-  clear: { textAlign: 'center', fontSize: 12, fontWeight: '700', marginTop: 15 },
+  checkoutText: { color: '#fff', fontFamily: fonts.extraBold },
+  clear: { textAlign: 'center', fontSize: 12, fontFamily: fonts.bold, marginTop: 15 },
 })

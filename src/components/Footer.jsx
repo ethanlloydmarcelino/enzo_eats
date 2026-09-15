@@ -2,6 +2,7 @@ import { Headphones, MapPin, Phone } from 'lucide-react-native'
 import { StyleSheet, Text, View, useWindowDimensions } from 'react-native'
 import Svg, { Circle, Rect } from 'react-native-svg'
 import { Logo } from './Logo'
+import { fonts } from '../fonts'
 import { useTranslations } from '../translations'
 
 const InstagramIcon = ({ color = '#777', size = 17 }) => (
@@ -59,7 +60,7 @@ const styles = StyleSheet.create({
   columnsWide: { flexDirection: 'row' },
   column: { flex: 1 },
   copy: { color: '#999', fontSize: 14, lineHeight: 22, maxWidth: 300, marginTop: 15 },
-  heading: { color: '#fff', fontSize: 14, fontWeight: '800', marginBottom: 12 },
+  heading: { color: '#fff', fontSize: 14, fontFamily: fonts.extraBold, marginBottom: 12 },
   line: { color: '#999', fontSize: 14, marginTop: 5 },
   contactList: { gap: 10 },
   support: { flexDirection: 'row', gap: 8, alignItems: 'flex-start' },

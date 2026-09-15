@@ -14,6 +14,7 @@ import { LaunchScreen } from './components/LaunchScreen'
 import { useThemeStore } from './store/useThemeStore'
 import { useLanguageStore } from './store/useLanguageStore'
 import { useColors } from './theme'
+import { useAppFonts } from './fonts'
 
 const queryClient = new QueryClient()
 
@@ -29,8 +30,10 @@ const App = () => {
   const hydrateTheme = useThemeStore((state) => state.hydrateTheme)
   const hydrateLanguage = useLanguageStore((state) => state.hydrateLanguage)
   const colors = useColors(theme)
+  const [fontsLoaded] = useAppFonts()
 
   useEffect(() => {
+    if (!fontsLoaded) return undefined
     let active = true
     const minimumDisplay = new Promise((resolve) => setTimeout(resolve, 1200))
 
@@ -41,7 +44,7 @@ const App = () => {
     return () => {
       active = false
     }
-  }, [hydrateLanguage, hydrateTheme])
+  }, [fontsLoaded, hydrateLanguage, hydrateTheme])
 
   const finishLaunch = useCallback(() => setShowLaunch(false), [])
 
