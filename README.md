@@ -17,6 +17,6 @@ Use `npm run android`, `npm run ios`, or `npm run web` to open a specific platfo
 
 There's no backend yet. `src/data/menu.js` returns the menu from static data, and the checkout button is intentionally frontend-only until a backend (order creation, payment, persistence) is designed and connected.
 
-## Code standards.
+## Code standards
 
 Components use arrow functions and React Native `StyleSheet` styles. Run `npm run format` before committing and `npm run format:check` in CI.
