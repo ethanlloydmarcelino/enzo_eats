@@ -1,3 +1,6 @@
+import { useState } from 'react'
+import { useAuthStore } from '../store/useAuthStore'
+import { profileError } from '../auth/validation'
 import { Banknote, Globe, Minus, Plus, ShoppingBag, Smartphone, X } from 'lucide-react-native'
 import {
   Image,
@@ -28,8 +31,32 @@ const PAYPAL_EMAIL = 'pay@enzoeats.ph'
 const PAYPAL_ME_LINK = 'https://paypal.me/EnzoEats'
 
 export const CartDrawer = () => {
-  const { cart, cartOpen, setCartOpen, changeQuantity, clearCart, paymentMethod, setPaymentMethod } =
-    useOrderStore()
+  const {
+    cart,
+    cartOpen,
+    setCartOpen,
+    changeQuantity,
+    clearCart,
+    paymentMethod,
+    setPaymentMethod,
+  } = useOrderStore()
+  const { status, attributes, accountOpen, openAccount } = useAuthStore()
+  const [checkoutNotice, setCheckoutNotice] = useState(false)
+  const profileComplete =
+    attributes &&
+    !profileError({
+      given_name: attributes.given_name ?? '',
+      family_name: attributes.family_name ?? '',
+      phone_number: attributes.phone_number ?? '',
+      address: attributes.address ?? '',
+    })
+  const requireAccount = () => {
+    if (status !== 'signedIn' || !profileComplete) {
+      openAccount(true)
+      return false
+    }
+    return true
+  }
   const colors = useColors(useThemeStore((state) => state.theme))
   const { language, t } = useTranslations()
   const insets = useSafeAreaInsets()
@@ -52,7 +79,7 @@ export const CartDrawer = () => {
 
   return (
     <Modal
-      visible={cartOpen}
+      visible={cartOpen && !accountOpen}
       transparent
       animationType="slide"
       onRequestClose={() => setCartOpen(false)}
@@ -240,7 +267,9 @@ export const CartDrawer = () => {
                         </Text>
                       </View>
                       <Pressable
-                        onPress={() => Linking.openURL(PAYPAL_ME_LINK)}
+                        onPress={() => {
+                          if (requireAccount()) void Linking.openURL(PAYPAL_ME_LINK)
+                        }}
                         style={[styles.walletButton, { borderColor: PAYPAL_BLUE }]}
                       >
                         <Text style={[styles.walletButtonText, { color: PAYPAL_BLUE }]}>
@@ -250,9 +279,33 @@ export const CartDrawer = () => {
                     </View>
                   )}
                 </View>
-                <Pressable style={[styles.checkout, { backgroundColor: checkoutAccent }]}>
-                  <Text style={styles.checkoutText}>{checkoutLabel}</Text>
+                <Pressable
+                  accessibilityRole="button"
+                  disabled={status === 'loading'}
+                  onPress={() => {
+                    if (requireAccount()) setCheckoutNotice(true)
+                  }}
+                  style={[
+                    styles.checkout,
+                    { backgroundColor: checkoutAccent, opacity: status === 'loading' ? 0.5 : 1 },
+                  ]}
+                >
+                  <Text style={styles.checkoutText}>
+                    {status === 'loading'
+                      ? t('authLoading')
+                      : status !== 'signedIn'
+                        ? t('authCheckout')
+                        : checkoutLabel}
+                  </Text>
                 </Pressable>
+                {checkoutNotice && status === 'signedIn' && (
+                  <Text
+                    accessibilityLiveRegion="polite"
+                    style={[styles.walletText, { color: colors.mutedForeground, marginTop: 12 }]}
+                  >
+                    {t('checkoutUnavailable')}
+                  </Text>
+                )}
                 <Pressable onPress={clearCart}>
                   <Text style={[styles.clear, { color: colors.mutedForeground }]}>
                     {t('clearBag')}

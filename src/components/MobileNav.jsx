@@ -1,5 +1,6 @@
-import { Home, Search, ShoppingBag, Utensils } from 'lucide-react-native'
+import { Home, Search, ShoppingBag, Utensils, UserRound } from 'lucide-react-native'
 import { Pressable, StyleSheet, Text, View, useWindowDimensions } from 'react-native'
+import { useAuthStore } from '../store/useAuthStore'
 import { fonts } from '../fonts'
 import { useOrderStore } from '../store/useOrderStore'
 import { useThemeStore } from '../store/useThemeStore'
@@ -7,6 +8,7 @@ import { useColors } from '../theme'
 import { useTranslations } from '../translations'
 
 export const MobileNav = ({ onHome, onMenu, onSearch }) => {
+  const openAccount = useAuthStore((state) => state.openAccount)
   const setCartOpen = useOrderStore((state) => state.setCartOpen)
   const cart = useOrderStore((state) => state.cart)
   const colors = useColors(useThemeStore((state) => state.theme))
@@ -23,6 +25,7 @@ export const MobileNav = ({ onHome, onMenu, onSearch }) => {
       Icon: ShoppingBag,
       action: () => setCartOpen(true),
     },
+    { label: t('account'), Icon: UserRound, action: () => openAccount() },
   ]
   return (
     <View style={[styles.nav, { backgroundColor: colors.card, borderTopColor: colors.border }]}>

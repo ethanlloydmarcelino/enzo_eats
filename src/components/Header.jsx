@@ -1,15 +1,18 @@
-import { Search, ShoppingBag } from 'lucide-react-native'
+import { Search, ShoppingBag, UserRound } from 'lucide-react-native'
 import { Pressable, StyleSheet, Text, View, useWindowDimensions } from 'react-native'
 import { Logo } from './Logo'
 import { useOrderStore } from '../store/useOrderStore'
 import { ThemeToggle } from './ThemeToggle'
 import { LanguageToggle } from './LanguageToggle'
+import { useAuthStore } from '../store/useAuthStore'
 import { fonts } from '../fonts'
 import { useThemeStore } from '../store/useThemeStore'
 import { useColors } from '../theme'
 import { useTranslations } from '../translations'
 
 export const Header = ({ onMenu, onSearch }) => {
+  const openAccount = useAuthStore((state) => state.openAccount)
+  const user = useAuthStore((state) => state.user)
   const cart = useOrderStore((state) => state.cart)
   const setCartOpen = useOrderStore((state) => state.setCartOpen)
   const colors = useColors(useThemeStore((state) => state.theme))
@@ -44,6 +47,16 @@ export const Header = ({ onMenu, onSearch }) => {
               style={styles.iconButton}
             >
               <Search size={19} color={colors.foreground} />
+            </Pressable>
+          )}
+          {width >= 760 && (
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={t(user ? 'account' : 'authSignIn')}
+              onPress={() => openAccount()}
+              style={styles.iconButton}
+            >
+              <UserRound size={19} color={colors.foreground} />
             </Pressable>
           )}
           <ThemeToggle />

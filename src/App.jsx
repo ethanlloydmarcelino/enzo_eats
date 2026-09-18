@@ -3,6 +3,8 @@ import { StatusBar } from 'expo-status-bar'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { ScrollView, StyleSheet, View } from 'react-native'
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context'
+import { AuthModal } from './components/AuthModal'
+import { listenToAuth } from './store/useAuthStore'
 import { Header } from './components/Header'
 import { Hero } from './components/Hero'
 import { MenuSection } from './components/MenuSection'
@@ -46,6 +48,8 @@ const App = () => {
     }
   }, [fontsLoaded, hydrateLanguage, hydrateTheme])
 
+  useEffect(() => listenToAuth(), [])
+
   const finishLaunch = useCallback(() => setShowLaunch(false), [])
 
   const openMenu = () => scrollRef.current?.scrollTo({ y: menuY, animated: true })
@@ -85,6 +89,7 @@ const App = () => {
             onSearch={focusSearch}
           />
           <CartDrawer />
+          <AuthModal />
           {showLaunch && <LaunchScreen ready={appReady} onFinished={finishLaunch} />}
         </SafeAreaView>
       </QueryClientProvider>

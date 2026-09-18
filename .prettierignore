@@ -5,3 +5,5 @@ public/images/
 .expo/
 android/
 ios/
+
+.amplify/

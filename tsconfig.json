@@ -1,4 +1,6 @@
 {
   "compilerOptions": {},
-  "extends": "expo/tsconfig.base"
+  "extends": "expo/tsconfig.base",
+  "include": ["src/**/*", "index.js"],
+  "exclude": ["node_modules", ".amplify", "dist", "android", "ios"]
 }
