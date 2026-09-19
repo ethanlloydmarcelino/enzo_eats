@@ -1,0 +1,22 @@
+version: 1
+frontend:
+  phases:
+    preBuild:
+      commands:
+        - nvm install 22
+        - nvm use 22
+        - npm install --global npm@10.9.9
+        - node --version
+        - npm --version
+        - npm ci --cache .npm --prefer-offline
+        - AWS_REGION=ap-southeast-1 npx ampx generate outputs --stack amplify-enzoeats-ethan-sandbox-78ed6b8d3e
+    build:
+      commands:
+        - npx expo export --platform web
+  artifacts:
+    baseDirectory: dist
+    files:
+      - '**/*'
+  cache:
+    paths:
+      - .npm/**/*
