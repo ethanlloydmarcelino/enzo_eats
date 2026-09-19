@@ -9,7 +9,7 @@ frontend:
         - node --version
         - npm --version
         - npm ci --cache .npm --prefer-offline
-        - AWS_REGION=ap-southeast-1 npx ampx generate outputs --stack amplify-enzoeats-ethan-sandbox-78ed6b8d3e
+        - cp config/sandbox-outputs.json amplify_outputs.json
     build:
       commands:
         - npx expo export --platform web
