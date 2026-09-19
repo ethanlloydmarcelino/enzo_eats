@@ -10,8 +10,12 @@ export const auth = defineAuth({
   loginWith: {
     email: true,
   },
-  // Preserve the existing pool's schema. The trigger enforces required profile
-  // fields because Cognito cannot make existing optional attributes required.
+  userAttributes: {
+    givenName: { required: true, mutable: true },
+    familyName: { required: true, mutable: true },
+    phoneNumber: { required: true, mutable: true },
+    address: { required: false, mutable: true },
+  },
   groups: ['super_admin', 'admin', 'user'],
   triggers: { preSignUp, postConfirmation },
   access: (allow) => [allow.resource(postConfirmation).to(['addUserToGroup'])],

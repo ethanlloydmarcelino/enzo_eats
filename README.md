@@ -25,11 +25,15 @@ Menu browsing remains public. Checkout requires a signed-in customer with a firs
 2. Keep the generated outputs file in the project root. `src/amplify.js` configures Amplify once before the app starts; never hand-edit the generated file or commit credentials.
 3. Run `npm run web` to use the browser app. For native development, rebuild your Expo development app after installing the new native dependencies (`npx expo run:android`, or `npx expo run:ios` on macOS).
 
-The existing Cognito pool schema is preserved. `amplify/auth/pre-sign-up/handler.ts` requires first name, last name, email, and phone number; address is optional and limited to 2,048 characters. It validates these fields on the server without changing immutable required-attribute settings or auto-verifying users. Deploy this function before relying on the server-side checks. First/last names, phone number, and address are standard Cognito attributes; email is the login identifier. Profile editing keeps email read-only. Phone numbers need a country code (for example, `+639171234567`); collecting a phone number does not verify ownership.
+The Cognito schema requires first name, last name, email, and phone number; address is optional. `amplify/auth/pre-sign-up/handler.ts` also rejects blank required fields, validates phone format, and limits address to 2,048 characters without auto-verifying users. First/last names, phone number, and address are standard Cognito attributes; email is the login identifier. Profile editing keeps email read-only. Phone numbers need a country code (for example, `+639171234567`); collecting a phone number does not verify ownership. Cognito required-attribute settings cannot be changed after pool creation.
 
 Amplify manages the session tokens. Passwords and verification codes stay in the form's temporary state and are not stored in Zustand or logged. Profile details are loaded from Cognito and cleared on sign-out. A failed session lookup blocks checkout and offers a retry.
 
 `src/data/menu.js` still supplies static menu data. Checkout, order persistence, and payment processing are not implemented; the checkout button explains that no order has been placed. Existing wallet details are placeholders. When an order API is added, it must enforce authentication and ownership on the backend as well; the UI gate alone is not API authorization.
+
+### Sandbox output errors.
+
+If outputs generation reports a missing `AWS::Amplify::Function.payload.definedFunctions`, inspect the sandbox and nested auth stack events in CloudFormation. A failed update can publish new metadata while retaining older outputs. Fix the underlying deployment failure, then run `npx ampx sandbox --once` to regenerate outputs. Keep `package-lock.json`: Amplify uses it to bundle functions. Changing required Cognito attributes needs a new user pool; recreating auth deletes accounts and sessions, so it is only suitable for a disposable sandbox or a planned migration.
 
 ### Roles
 
