@@ -14,7 +14,7 @@ export const statusLabelKeys = {
   CANCELLED: 'statusCancelled',
 }
 
-const paymentLabelKeys = { CASH: 'payCash', GCASH: 'payGcash', PAYPAL: 'payPaypal' }
+const paymentLabelKeys = { CASH: 'payCash', GCASH: 'payGcash' }
 
 // Denial is the one outcome a customer must not miss, so it is the only status
 // painted in the error colour; everything in flight shares the brand accent.

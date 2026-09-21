@@ -43,9 +43,6 @@ export const accountTranslations = {
     promotionsSubtitle: 'What is on offer right now.',
     promoPickupTitle: 'Pickup, always free',
     promoPickupBody: 'No delivery fee and no service charge — collect your order at the counter.',
-    promoPaypalTitle: 'PayPal on bigger orders',
-    promoPaypalBody:
-      'Baskets over ₱{amount} can be paid with PayPal, handy when family abroad is treating you.',
     promoGcashTitle: 'Pay ahead with GCash',
     promoGcashBody: 'Send payment before pickup and skip handling cash at the counter.',
     promotionsNote: 'Offers may change. The price shown at checkout is always the price you pay.',
@@ -60,15 +57,12 @@ export const accountTranslations = {
     faqApprovalQ: 'Why is my order waiting for approval?',
     faqApprovalA:
       'Every order is checked by the Enzo Eats team before it goes to the kitchen — we confirm your payment or, for cash, that we can hold the order for you. You will see the status change here as soon as a decision is made.',
-    faqPaypalQ: 'Why can I not choose PayPal?',
-    faqPaypalA:
-      'PayPal is available only for orders over ₱{amount}. Below that, its fees cost more than the order is worth, so please use GCash or cash on pickup.',
     faqDeniedQ: 'What happens if my order is not approved?',
     faqDeniedA:
       'The order moves to "Not approved" with a note explaining why, and nothing is cooked. If you had already paid, contact us and we will return your payment.',
     faqPickupQ: 'Where do I collect my order?',
     faqPickupA:
-      'At the Enzo Eats counter. Bring your order number — and for GCash or PayPal, your payment confirmation.',
+      'At the Enzo Eats counter. Bring your order number — and for GCash, your payment confirmation.',
 
     profilePhotoHint: 'Your initials appear on your account and beside your orders.',
     profileEmailHint: 'Your email is your sign-in and cannot be changed here.',
@@ -90,19 +84,11 @@ export const accountTranslations = {
       'Cash orders are confirmed by our team before cooking starts. You will see the decision in your orders.',
     gcashReferenceExplainer:
       'GCash does not notify us automatically, so we need the reference number from your GCash receipt to confirm your payment. You will be asked for it on the next step.',
-    paypalReferenceExplainer:
-      'After paying, we need the PayPal transaction ID from your receipt so we can confirm the payment. You will be asked for it on the next step.',
-    paypalMinimumNotice: 'PayPal is available only for orders over ₱{amount}.',
 
     gcashRefTitle: 'Enter your GCash reference number',
     gcashRefBody:
       'Send ₱{amount} via GCash first, then copy the reference number from your GCash receipt. Our team checks it against the payment before approving your order.',
     gcashRefLabel: 'GCash reference number',
-    paypalRefTitle: 'Enter your PayPal transaction ID',
-    paypalRefBody:
-      'Send ₱{amount} via PayPal first, then copy the transaction ID from your PayPal receipt so we can confirm the payment.',
-    paypalRefLabel: 'PayPal transaction ID',
-    paypalRefPlaceholder: 'e.g. 8AB12345CD678901E',
     submitReference: 'Submit and place order',
     backToBag: 'Back to bag',
 
@@ -114,10 +100,8 @@ export const accountTranslations = {
     orderErrorCartTooLarge: 'That is too many items for one order. Please split it up.',
     orderErrorUnknownItem: 'One of those dishes is no longer on the menu. Please rebuild your bag.',
     orderErrorQuantity: 'Please check the quantities in your bag.',
-    orderErrorPaypalMinimum: 'PayPal is available only for orders over ₱500.',
     orderErrorGcashReference:
       'Enter the reference number from your GCash receipt — 10 to 16 digits.',
-    orderErrorPaypalReference: 'Enter the transaction ID from your PayPal receipt.',
     orderErrorProfile: 'Complete your name, phone number, and email before ordering.',
     orderErrorSignedOut: 'Please sign in again to place your order.',
     orderErrorNotAuthorized: 'You do not have permission to do that.',
@@ -168,9 +152,6 @@ export const accountTranslations = {
     promoPickupTitle: 'Libre ang pickup',
     promoPickupBody:
       'Walang delivery fee at walang service charge — kunin ang order mo sa counter.',
-    promoPaypalTitle: 'PayPal para sa mas malaking order',
-    promoPaypalBody:
-      'Ang order na higit ₱{amount} ay maaaring bayaran gamit ang PayPal, madali kung kamag-anak sa ibang bansa ang nagbabayad.',
     promoGcashTitle: 'Magbayad nang maaga gamit ang GCash',
     promoGcashBody: 'Magbayad bago ang pickup at hindi na kailangang maghawak ng cash sa counter.',
     promotionsNote:
@@ -186,15 +167,12 @@ export const accountTranslations = {
     faqApprovalQ: 'Bakit naghihintay ng aprubahan ang order ko?',
     faqApprovalA:
       'Tinitingnan ng Enzo Eats ang bawat order bago ito ipadala sa kusina — kinukumpirma namin ang bayad o, para sa cash, na kaya naming itabi ang order para sa iyo. Makikita mo agad dito ang pagbabago ng status.',
-    faqPaypalQ: 'Bakit hindi ko mapili ang PayPal?',
-    faqPaypalA:
-      'Available lang ang PayPal sa mga order na higit ₱{amount}. Sa mas maliit na halaga, mas malaki pa ang bayarin nito kaysa sa order, kaya gamitin ang GCash o cash sa pickup.',
     faqDeniedQ: 'Ano ang mangyayari kung hindi aprubado ang order ko?',
     faqDeniedA:
       'Magiging "Hindi aprubado" ang order na may paliwanag kung bakit, at walang lulutuin. Kung nakabayad ka na, kontakin kami at ibabalik namin ang bayad mo.',
     faqPickupQ: 'Saan ko kukunin ang order ko?',
     faqPickupA:
-      'Sa counter ng Enzo Eats. Dalhin ang order number mo — at para sa GCash o PayPal, ang kumpirmasyon ng bayad.',
+      'Sa counter ng Enzo Eats. Dalhin ang order number mo — at para sa GCash, ang kumpirmasyon ng bayad.',
 
     profilePhotoHint: 'Lalabas ang initials mo sa account mo at katabi ng mga order mo.',
     profileEmailHint: 'Ang email mo ang sign-in mo at hindi ito mapapalitan dito.',
@@ -216,19 +194,11 @@ export const accountTranslations = {
       'Kinukumpirma ng team namin ang mga cash order bago magsimula ang pagluluto. Makikita mo ang desisyon sa mga order mo.',
     gcashReferenceExplainer:
       'Hindi kami awtomatikong inaabisuhan ng GCash, kaya kailangan namin ang reference number mula sa GCash receipt mo para makumpirma ang bayad. Hihingin ito sa susunod na hakbang.',
-    paypalReferenceExplainer:
-      'Pagkatapos magbayad, kailangan namin ang PayPal transaction ID mula sa resibo mo para makumpirma ang bayad. Hihingin ito sa susunod na hakbang.',
-    paypalMinimumNotice: 'Available lang ang PayPal sa mga order na higit ₱{amount}.',
 
     gcashRefTitle: 'Ilagay ang GCash reference number mo',
     gcashRefBody:
       'Magpadala muna ng ₱{amount} gamit ang GCash, pagkatapos kopyahin ang reference number sa GCash receipt mo. Tinitingnan ito ng team namin laban sa bayad bago aprubahan ang order mo.',
     gcashRefLabel: 'GCash reference number',
-    paypalRefTitle: 'Ilagay ang PayPal transaction ID mo',
-    paypalRefBody:
-      'Magpadala muna ng ₱{amount} gamit ang PayPal, pagkatapos kopyahin ang transaction ID sa resibo mo para makumpirma namin ang bayad.',
-    paypalRefLabel: 'PayPal transaction ID',
-    paypalRefPlaceholder: 'hal. 8AB12345CD678901E',
     submitReference: 'Isumite at i-order',
     backToBag: 'Bumalik sa bag',
 
@@ -241,10 +211,8 @@ export const accountTranslations = {
     orderErrorUnknownItem:
       'Wala na sa menu ang isa sa mga putaheng iyon. Pakiayos muli ang bag mo.',
     orderErrorQuantity: 'Pakitingnan ang dami ng mga item sa bag mo.',
-    orderErrorPaypalMinimum: 'Available lang ang PayPal sa mga order na higit ₱500.',
     orderErrorGcashReference:
       'Ilagay ang reference number mula sa GCash receipt mo — 10 hanggang 16 na numero.',
-    orderErrorPaypalReference: 'Ilagay ang transaction ID mula sa PayPal receipt mo.',
     orderErrorProfile: 'Kumpletuhin ang pangalan, telepono, at email mo bago mag-order.',
     orderErrorSignedOut: 'Mag-sign in ulit para mailagay ang order mo.',
     orderErrorNotAuthorized: 'Wala kang pahintulot para diyan.',

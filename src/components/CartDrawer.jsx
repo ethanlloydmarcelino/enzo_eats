@@ -4,7 +4,6 @@ import { profileError } from '../auth/validation'
 import {
   Banknote,
   CheckCircle2,
-  Globe,
   Info,
   Minus,
   Plus,
@@ -33,10 +32,8 @@ import { useTranslations } from '../translations'
 import {
   GCASH_NAME,
   GCASH_NUMBER,
-  PAYPAL_MINIMUM,
   isValidGcashReference,
   normalizeGcashReference,
-  paypalAvailable,
 } from '../checkout/rules'
 import { orderErrorKey } from '../orders/client'
 import { usePlaceOrder } from '../orders/useOrders'
@@ -44,7 +41,6 @@ import { usePlaceOrder } from '../orders/useOrders'
 // Each e-wallet's own brand color, used regardless of app theme so an option
 // reads as that wallet rather than as another primary-colored app control.
 const GCASH_BLUE = '#0072CE'
-const PAYPAL_BLUE = '#0070BA'
 
 export const CartDrawer = () => {
   const {
@@ -57,7 +53,7 @@ export const CartDrawer = () => {
     setPaymentMethod,
   } = useOrderStore()
   const { status, attributes, accountOpen, openAccount } = useAuthStore()
-  // 'cart' -> optionally 'reference' (GCash / PayPal proof) -> 'placed'.
+  // 'cart' -> optionally 'reference' (GCash proof) -> 'placed'.
   const [step, setStep] = useState('cart')
   const [reference, setReference] = useState('')
   const [error, setError] = useState('')
@@ -84,13 +80,10 @@ export const CartDrawer = () => {
   const insets = useSafeAreaInsets()
   const { width } = useWindowDimensions()
   const subtotal = cart.reduce((sum, item) => sum + item.price * item.quantity, 0)
-  const paypalAllowed = paypalAvailable(subtotal)
-
-  // A basket can drop below the PayPal threshold after it was selected; fall
-  // back rather than leaving an unusable method armed.
+  // Reset obsolete payment selections restored by an older app session.
   useEffect(() => {
-    if (paymentMethod === 'paypal' && !paypalAllowed) setPaymentMethod('cash')
-  }, [paymentMethod, paypalAllowed, setPaymentMethod])
+    if (!['cash', 'gcash'].includes(paymentMethod)) setPaymentMethod('cash')
+  }, [paymentMethod, setPaymentMethod])
 
   const close = () => {
     if (placeOrder.isPending) return
@@ -138,8 +131,8 @@ export const CartDrawer = () => {
   const startCheckout = () => {
     if (!requireAccount()) return
     setError('')
-    if (paymentMethod === 'paypal') {
-      setError('paypalNotAvailable')
+    if (!['cash', 'gcash'].includes(paymentMethod)) {
+      setError('orderErrorFailed')
       return
     }
     if (paymentMethod === 'gcash') setStep('reference')
@@ -152,59 +145,40 @@ export const CartDrawer = () => {
       setError('orderErrorGcashReference')
       return
     }
-    if (paymentMethod === 'paypal' && !value.trim()) {
-      setError('orderErrorPaypalReference')
-      return
-    }
     submit(value)
   }
 
   const paymentMethods = [
     { id: 'cash', label: t('payCash'), Icon: Banknote, accent: colors.primary, enabled: true },
     { id: 'gcash', label: t('payGcash'), Icon: Smartphone, accent: GCASH_BLUE, enabled: true },
-    {
-      id: 'paypal',
-      label: t('payPaypal'),
-      Icon: Globe,
-      accent: PAYPAL_BLUE,
-      enabled: false,
-    },
   ]
   const checkoutAccent =
     paymentMethods.find((method) => method.id === paymentMethod)?.accent ?? colors.primary
-  const checkoutLabel =
-    paymentMethod === 'gcash'
-      ? t('continueGcash')
-      : paymentMethod === 'paypal'
-        ? t('continuePaypal')
-        : t('pickupCheckout')
+  const checkoutLabel = paymentMethod === 'gcash' ? t('continueGcash') : t('pickupCheckout')
 
-  const isGcash = paymentMethod === 'gcash'
-  const referenceAccent = isGcash ? GCASH_BLUE : PAYPAL_BLUE
+  const referenceAccent = GCASH_BLUE
 
   const renderReferenceStep = () => (
     <View style={styles.referenceStep}>
       <Text accessibilityRole="header" style={[styles.stepTitle, { color: colors.foreground }]}>
-        {t(isGcash ? 'gcashRefTitle' : 'paypalRefTitle')}
+        {t('gcashRefTitle')}
       </Text>
       <Text style={[styles.walletText, { color: colors.mutedForeground }]}>
-        {t(isGcash ? 'gcashRefBody' : 'paypalRefBody', { amount: subtotal.toFixed(2) })}
+        {t('gcashRefBody', { amount: subtotal.toFixed(2) })}
       </Text>
       <View style={styles.field}>
-        <Text style={[styles.label, { color: colors.foreground }]}>
-          {t(isGcash ? 'gcashRefLabel' : 'paypalRefLabel')}
-        </Text>
+        <Text style={[styles.label, { color: colors.foreground }]}>{t('gcashRefLabel')}</Text>
         <TextInput
-          accessibilityLabel={t(isGcash ? 'gcashRefLabel' : 'paypalRefLabel')}
+          accessibilityLabel={t('gcashRefLabel')}
           value={reference}
           onChangeText={setReference}
           editable={!placeOrder.isPending}
           autoFocus
-          keyboardType={isGcash ? 'number-pad' : 'default'}
+          keyboardType="number-pad"
           autoCapitalize="none"
           autoCorrect={false}
           maxLength={64}
-          placeholder={isGcash ? '0000 0000 0000' : t('paypalRefPlaceholder')}
+          placeholder="0000 0000 0000"
           placeholderTextColor={colors.mutedForeground}
           style={[
             styles.input,
@@ -377,11 +351,6 @@ export const CartDrawer = () => {
                           key={id}
                           accessibilityRole="button"
                           accessibilityState={{ disabled: !enabled, selected: active }}
-                          accessibilityHint={
-                            enabled
-                              ? undefined
-                              : t('paypalMinimumNotice', { amount: PAYPAL_MINIMUM })
-                          }
                           disabled={!enabled}
                           onPress={() => setPaymentMethod(id)}
                           style={[
@@ -406,20 +375,6 @@ export const CartDrawer = () => {
                       )
                     })}
                   </View>
-                  {!paypalAllowed && (
-                    <View style={styles.noteRow}>
-                      <Info size={14} color={colors.mutedForeground} />
-                      <Text
-                        accessibilityLiveRegion="polite"
-                        style={[styles.noteText, { color: colors.mutedForeground }]}
-                      >
-                        {t('paypalMinimumNotice', { amount: PAYPAL_MINIMUM })}
-                      </Text>
-                    </View>
-                  )}
-                  <Text style={[styles.noteText, { color: colors.mutedForeground }]}>
-                    {t('paypalNotAvailable')}
-                  </Text>
                   {paymentMethod === 'cash' && (
                     <View style={styles.noteRow}>
                       <Info size={14} color={colors.mutedForeground} />

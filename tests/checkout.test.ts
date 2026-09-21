@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import { priceOrder, transitionAllowed } from '../amplify/functions/shared/checkout'
-import { paypalAvailable, GCASH_NUMBER } from '../src/checkout/rules'
+import { GCASH_NUMBER } from '../src/checkout/rules'
 
 test('server reprices a forged cart and rejects invalid quantities and options', () => {
   const line = { menuId: 2, quantity: 3, unitPrice: 1, name: 'Fake item' }
@@ -20,7 +20,7 @@ test('server reprices a forged cart and rejects invalid quantities and options',
   )
 })
 
-test('GCash requires a reference and PayPal cannot bypass its disabled UI', () => {
+test('GCash requires a reference and unsupported payment methods remain blocked', () => {
   const lines = [{ menuId: 2, quantity: 10 }]
   assert.equal(GCASH_NUMBER, '0916-408-2529')
   assert.throws(() => priceOrder(lines, 'GCASH'), /GCASH_REFERENCE_INVALID/)
@@ -28,8 +28,6 @@ test('GCash requires a reference and PayPal cannot bypass its disabled UI', () =
   assert.equal(priceOrder(lines, 'GCASH', '1234 5678 90123').length, 1)
   assert.throws(() => priceOrder(lines, 'PAYPAL'), /PAYPAL_NOT_AVAILABLE/)
   assert.throws(() => priceOrder(lines, 'INVENTED'), /INVALID_PAYMENT_METHOD/)
-  assert.equal(paypalAvailable(500), false)
-  assert.equal(paypalAvailable(500.01), true)
 })
 
 test('order lifecycle does not skip approval or overturn terminal decisions', () => {

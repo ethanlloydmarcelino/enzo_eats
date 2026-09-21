@@ -3,7 +3,7 @@ import { ChevronDown, ChevronUp, Mail, MessageCircle } from 'lucide-react-native
 import { Linking, Pressable, StyleSheet, Text, View } from 'react-native'
 import { AccountScreen } from '../../src/components/account/AccountScreen'
 import { fonts } from '../../src/fonts'
-import { GCASH_NUMBER, PAYPAL_MINIMUM } from '../../src/checkout/rules'
+import { GCASH_NUMBER } from '../../src/checkout/rules'
 import { useThemeStore } from '../../src/store/useThemeStore'
 import { useColors } from '../../src/theme'
 import { useTranslations } from '../../src/translations'
@@ -13,7 +13,6 @@ const SUPPORT_EMAIL = 'support@enzoeats.ph'
 const faqs = [
   { id: 'reference', qKey: 'faqReferenceQ', aKey: 'faqReferenceA' },
   { id: 'approval', qKey: 'faqApprovalQ', aKey: 'faqApprovalA' },
-  { id: 'paypal', qKey: 'faqPaypalQ', aKey: 'faqPaypalA' },
   { id: 'denied', qKey: 'faqDeniedQ', aKey: 'faqDeniedA' },
   { id: 'pickup', qKey: 'faqPickupQ', aKey: 'faqPickupA' },
 ]
@@ -54,7 +53,7 @@ const Help = () => {
               </Pressable>
               {expanded && (
                 <Text style={[styles.answer, { color: colors.mutedForeground }]}>
-                  {t(aKey, { amount: PAYPAL_MINIMUM, number: GCASH_NUMBER })}
+                  {t(aKey, { number: GCASH_NUMBER })}
                 </Text>
               )}
             </View>

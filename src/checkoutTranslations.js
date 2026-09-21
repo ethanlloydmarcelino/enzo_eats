@@ -4,10 +4,6 @@ export const checkoutTranslations = {
     advancePREPARING: 'Start preparing',
     advanceREADY: 'Mark ready for pickup',
     advanceCOMPLETED: 'Confirm pickup and payment received',
-    faqPaypalA:
-      'PayPal is not enabled yet. When enabled, it will be available only for orders over ₱{amount}. Use GCash or cash for now.',
-    paypalNotAvailable:
-      'PayPal is not enabled yet. Please use GCash or cash. When enabled, PayPal will require an order over ₱500.',
     preferencesError:
       'Account preferences could not be saved or loaded. Please reconnect and reopen the app to retry.',
     profilePhotoUrl: 'Profile picture URL',
@@ -24,10 +20,6 @@ export const checkoutTranslations = {
     advancePREPARING: 'Simulan ang paghahanda',
     advanceREADY: 'Handa na para kunin',
     advanceCOMPLETED: 'Kumpirmahin na nakuha at nabayaran',
-    faqPaypalA:
-      'Hindi pa available ang PayPal. Kapag available na, para lang ito sa mga order na higit ₱{amount}. Gamitin muna ang GCash o cash.',
-    paypalNotAvailable:
-      'Hindi pa available ang PayPal. Gamitin muna ang GCash o cash. Kapag available na, dapat higit ₱500 ang order.',
     preferencesError:
       'Hindi na-save o na-load ang account preferences. Kumonekta muli at buksan ulit ang app.',
     profilePhotoUrl: 'URL ng larawan sa profile',

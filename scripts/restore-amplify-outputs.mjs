@@ -1,4 +1,5 @@
 import { writeFileSync } from 'node:fs'
+import { Buffer } from 'node:buffer'
 import { gunzipSync } from 'node:zlib'
 
 const encoded = process.env.AMPLIFY_OUTPUTS_GZIP_BASE64

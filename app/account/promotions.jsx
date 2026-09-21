@@ -2,7 +2,6 @@ import { Tag } from 'lucide-react-native'
 import { StyleSheet, Text, View } from 'react-native'
 import { AccountScreen } from '../../src/components/account/AccountScreen'
 import { fonts } from '../../src/fonts'
-import { PAYPAL_MINIMUM } from '../../src/checkout/rules'
 import { useThemeStore } from '../../src/store/useThemeStore'
 import { useColors } from '../../src/theme'
 import { useTranslations } from '../../src/translations'
@@ -30,9 +29,7 @@ const Promotions = () => {
           </View>
           <View style={styles.copy}>
             <Text style={[styles.title, { color: colors.foreground }]}>{t(titleKey)}</Text>
-            <Text style={[styles.body, { color: colors.mutedForeground }]}>
-              {t(bodyKey, { amount: PAYPAL_MINIMUM })}
-            </Text>
+            <Text style={[styles.body, { color: colors.mutedForeground }]}>{t(bodyKey)}</Text>
           </View>
         </View>
       ))}

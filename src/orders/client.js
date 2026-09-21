@@ -18,14 +18,13 @@ export const cartToLines = (cart, language = 'en') =>
   }))
 
 const messageKeys = {
-  PAYPAL_NOT_AVAILABLE: 'paypalNotAvailable',
+  PAYPAL_NOT_AVAILABLE: 'orderErrorFailed',
   INVALID_OPTION: 'orderErrorUnknownItem',
   REQUEST_ALREADY_USED: 'orderErrorFailed',
   EMPTY_CART: 'orderErrorEmptyCart',
   CART_TOO_LARGE: 'orderErrorCartTooLarge',
   UNKNOWN_ITEM: 'orderErrorUnknownItem',
   INVALID_QUANTITY: 'orderErrorQuantity',
-  PAYPAL_MINIMUM_NOT_MET: 'orderErrorPaypalMinimum',
   GCASH_REFERENCE_INVALID: 'orderErrorGcashReference',
   PROFILE_INCOMPLETE: 'orderErrorProfile',
   NOT_AUTHENTICATED: 'orderErrorSignedOut',
