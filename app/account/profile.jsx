@@ -8,6 +8,8 @@ import { useAuthStore } from '../../src/store/useAuthStore'
 import { useThemeStore } from '../../src/store/useThemeStore'
 import { useColors } from '../../src/theme'
 import { useTranslations } from '../../src/translations'
+import { useOrderStore } from '../../src/store/useOrderStore'
+import { saveAccountPreferences } from '../../src/orders/preferences'
 
 const Field = ({ label, hint, colors, ...props }) => (
   <View style={styles.field}>
@@ -35,17 +37,25 @@ const Profile = () => {
     lastName: attributes?.family_name ?? '',
     phoneNumber: attributes?.phone_number ?? '',
     address: attributes?.address ?? '',
-    picture: attributes?.picture ?? '',
   }))
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
   const [notice, setNotice] = useState('')
+  const pictureUrl = useOrderStore((state) => state.pictureUrl)
+  const [picture, setPicture] = useState(null)
 
   const change = (key) => (value) => setValues((current) => ({ ...current, [key]: value }))
 
   const save = async () => {
     const profile = profileAttributes(values)
     const invalid = profileError(profile)
+    const photo = (picture ?? pictureUrl).trim()
+    try {
+      if (photo && (new URL(photo).protocol !== 'https:' || photo.length > 2048)) throw new Error()
+    } catch {
+      setError('profilePhotoInvalid')
+      return
+    }
     if (invalid) {
       setError(invalid)
       setNotice('')
@@ -55,9 +65,11 @@ const Profile = () => {
     setError('')
     setNotice('')
     try {
-      // `picture` is sent alongside the required attributes so one save covers
-      // the whole form; an empty box clears the photo back to initials.
-      await saveProfile({ ...profile, picture: values.picture.trim() })
+      await saveProfile(profile)
+      await saveAccountPreferences(useAuthStore.getState().user.userId, {
+        pictureUrl: photo || null,
+      })
+      useOrderStore.setState({ pictureUrl: photo })
       setNotice('authProfileSaved')
     } catch (cause) {
       setError(authErrorKey(cause))
@@ -69,12 +81,22 @@ const Profile = () => {
   return (
     <AccountScreen title={t('accountManageProfile')} subtitle={t('authProfileDescription')}>
       <View style={styles.avatarRow}>
-        <Avatar attributes={{ ...attributes, picture: values.picture.trim() }} size={76} />
+        <Avatar attributes={attributes} size={76} />
         <Text style={[styles.avatarHint, { color: colors.mutedForeground }]}>
           {t('profilePhotoHint')}
         </Text>
       </View>
 
+      <Field
+        colors={colors}
+        label={t('profilePhotoUrl')}
+        hint={t('profilePhotoUrlHint')}
+        value={picture ?? pictureUrl}
+        onChangeText={setPicture}
+        editable={!busy}
+        autoCapitalize="none"
+        keyboardType="url"
+      />
       <Field
         colors={colors}
         label={t('authFirstName')}
@@ -125,19 +147,6 @@ const Profile = () => {
         multiline
         placeholder={t('authAddressHint')}
       />
-      <Field
-        colors={colors}
-        label={t('profilePhotoLabel')}
-        hint={t('profilePhotoUrlHint')}
-        value={values.picture}
-        onChangeText={change('picture')}
-        editable={!busy}
-        autoCapitalize="none"
-        autoCorrect={false}
-        keyboardType="url"
-        placeholder="https://"
-      />
-
       {!!error && (
         <Text accessibilityRole="alert" accessibilityLiveRegion="assertive" style={styles.error}>
           {t(error)}

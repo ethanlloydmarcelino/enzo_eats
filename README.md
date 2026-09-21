@@ -35,7 +35,19 @@ The Cognito schema requires first name, last name, email, and phone number; addr
 
 Amplify manages the session tokens. Passwords and verification codes stay in the form's temporary state and are not stored in Zustand or logged. Profile details are loaded from Cognito and cleared on sign-out. A failed session lookup blocks checkout and offers a retry.
 
-`src/data/menu.js` still supplies static menu data. Checkout, order persistence, and payment processing are not implemented; the checkout button explains that no order has been placed. Existing wallet details are placeholders. When an order API is added, it must enforce authentication and ownership on the backend as well; the UI gate alone is not API authorization.
+### Accounts, checkout, and approvals
+
+Signup acknowledges successful account creation only after Cognito accepts the request, then asks for email verification. The account icon opens `/account`, with names, a profile picture or initials, favorites, current and past orders, profile management, promotions, and help. Private `AccountPreferences` records save favorites and an optional HTTPS profile-picture URL through AppSync; account names, email, phone, and optional address remain in Cognito. Green PWA icons and Apple home-screen metadata are in `public/`.
+
+Cash and GCash orders are submitted through the `placeOrder` GraphQL mutation. GCash payments go to **0916-408-2529**, and customers must supply their receipt reference before submitting. Both methods wait for an admin or super admin to approve or deny them. PayPal is intentionally disabled, including on the server, until an API integration is requested. Its future eligibility threshold remains strictly greater than PHP 500; no PayPal link or unverified payment can submit an order.
+
+The Lambda reprices menu items using `amplify/functions/shared/checkout.ts`, validates quantities and flavors, and reads the current customer profile from Cognito using the caller's identity. Orders include customer details, line items, PHP totals, payment method/reference, status, timestamps, and a durable transition history. Client request IDs prevent duplicate submissions on retry. Update both the server price table and `src/data/menu.js` when changing the menu.
+
+Only backend functions can write orders. Customers can read their own orders; admin groups can read the queue and call approval and fulfillment mutations. Conditional updates prevent competing decisions from overwriting each other. Admins progress approved orders through preparing, ready, and completed; completion confirms pickup and receipt of cash payment. GCash approval means an admin has checked the reference against the merchant's actual payment records.
+
+Order mutations drive AppSync subscriptions for in-app customer notifications and the admin queue. Queries paginate and refresh periodically to recover missed connections. Dismissed notices are stored per account on the device. Order history is saved atomically with state changes; `OrderEvent` is a secondary event feed whose write failures are logged. This does not send push notifications or email when the app is closed. If those are added later, use a DynamoDB stream/outbox consumer with EventBridge or SQS, retries, and a dead-letter queue.
+
+After deployment, refresh `config/sandbox-outputs.json` from the generated outputs so hosting sees `Order`, `OrderEvent`, and `AccountPreferences`. Run `npm run test:checkout` for pricing, GCash, PayPal-disabled, and lifecycle checks. Verify the full signup and ordering flow using customer and admin test accounts before accepting real orders.
 
 ### Sandbox output errors.
 
@@ -47,7 +59,7 @@ Cognito groups represent the roles: `super_admin` (displayed as **Super admin**)
 
 To promote an account, an authorized AWS operator can manage its groups in the Cognito user pool console. Add it to `admin` or `super_admin`, and remove any elevated groups when demoting it. The customer must sign out and back in to obtain updated token claims. Signup and profile forms never let customers choose or edit their role.
 
-Existing accounts are not automatically backfilled into groups by deployment; assign their groups in Cognito as needed. Accounts without a recognized group display User as the least-privileged fallback; this does not create group membership or grant group-protected API access. No administrative screens or extra API permissions are introduced by defining these roles. Future backend rules must explicitly enforce the intended group permissions.
+Existing accounts are not automatically backfilled into groups by deployment; assign their groups in Cognito as needed. Accounts without a recognized group display User as the least-privileged fallback; this does not create group membership or grant group-protected API access. The admin section at `/account/admin` and its mutations require `admin` or `super_admin` membership.
 
 ### Verify authentication
 

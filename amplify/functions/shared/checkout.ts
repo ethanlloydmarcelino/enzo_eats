@@ -30,3 +30,54 @@ export const isValidGcashReference = (value: string) =>
   GCASH_REFERENCE_PATTERN.test(normalizeGcashReference(value))
 
 export const round2 = (value: number) => Math.round(value * 100) / 100
+
+export const transitionAllowed = (from: string, to: string) =>
+  (
+    ({
+      AWAITING_APPROVAL: ['APPROVED', 'DENIED'],
+      APPROVED: ['PREPARING'],
+      PREPARING: ['READY'],
+      READY: ['COMPLETED'],
+    }) as Record<string, string[]>
+  )[from]?.includes(to) ?? false
+
+export const priceOrder = (
+  lines: { menuId: number; quantity: number; option?: string | null }[],
+  method: string,
+  reference = '',
+) => {
+  if (method === 'PAYPAL') throw new Error('PAYPAL_NOT_AVAILABLE')
+  if (!['CASH', 'GCASH'].includes(method)) throw new Error('INVALID_PAYMENT_METHOD')
+  if (!Array.isArray(lines) || !lines.length) throw new Error('EMPTY_CART')
+  if (lines.length > MAX_LINES) throw new Error('CART_TOO_LARGE')
+  if (method === 'GCASH' && !isValidGcashReference(reference))
+    throw new Error('GCASH_REFERENCE_INVALID')
+  return lines.map((line) => {
+    const item = MENU_PRICES[line.menuId]
+    if (!item) throw new Error('UNKNOWN_ITEM')
+    if (
+      !Number.isInteger(line.quantity) ||
+      line.quantity < 1 ||
+      line.quantity > MAX_QUANTITY_PER_LINE
+    )
+      throw new Error('INVALID_QUANTITY')
+    const flavors: Record<string, string> = {
+      blueberry: 'Blueberry',
+      strawberry: 'Strawberry',
+      'green-apple': 'Green Apple',
+      lychee: 'Lychee',
+    }
+    const option = line.option?.toLowerCase().replace(/ /g, '-')
+    if (line.menuId === 5 && (!option || !flavors[option])) throw new Error('INVALID_OPTION')
+    if (line.menuId !== 5 && option) throw new Error('INVALID_OPTION')
+    return {
+      menuId: line.menuId,
+      name: item.name,
+      category: item.category,
+      option: option ? flavors[option] : null,
+      unitPrice: item.price,
+      quantity: line.quantity,
+      lineTotal: round2(item.price * line.quantity),
+    }
+  })
+}

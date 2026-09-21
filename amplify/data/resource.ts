@@ -3,13 +3,15 @@ import { placeOrder } from '../functions/place-order/resource'
 import { reviewOrder } from '../functions/review-order/resource'
 
 /**
- * Orders are an append-only story: `Order` holds current state, `OrderEvent`
- * records every transition that produced it. Clients never write either one
+ * Order holds current state and its durable transition history. OrderEvent is
+ * a secondary event feed. Clients never write either one
  * directly — `placeOrder` and `reviewOrder` are the only doors in, so payment
  * rules and approvals cannot be bypassed from a device.
  */
 const schema = a
   .schema({
+    // Retain the existing sandbox table while adding the real order models.
+    Todo: a.model({ content: a.string() }).authorization((allow) => [allow.guest()]),
     OrderStatus: a.enum([
       'AWAITING_APPROVAL',
       'APPROVED',
@@ -43,6 +45,8 @@ const schema = a
         // GCash reference number, or the PayPal transaction note.
         paymentReference: a.string(),
         paymentVerified: a.boolean().required(),
+        requestHash: a.string(),
+        history: a.json(),
         // Customer details snapshotted at order time — a later profile edit must
         // not rewrite what the kitchen was told to expect.
         customerFirstName: a.string().required(),
@@ -93,6 +97,7 @@ const schema = a
     placeOrder: a
       .mutation()
       .arguments({
+        requestId: a.string().required(),
         paymentMethod: a.ref('PaymentMethod').required(),
         paymentReference: a.string(),
         note: a.string(),
@@ -102,6 +107,14 @@ const schema = a
       .authorization((allow) => [allow.authenticated()])
       .handler(a.handler.function(placeOrder)),
 
+    AccountPreferences: a
+      .model({
+        owner: a.string().required(),
+        favoriteIds: a.integer().array(),
+        pictureUrl: a.url(),
+      })
+      .authorization((allow) => [allow.ownerDefinedIn('owner').identityClaim('sub')]),
+
     reviewOrder: a
       .mutation()
       .arguments({
@@ -109,6 +122,13 @@ const schema = a
         approve: a.boolean().required(),
         decisionNote: a.string(),
       })
+      .returns(a.ref('Order'))
+      .authorization((allow) => [allow.groups(['admin', 'super_admin'])])
+      .handler(a.handler.function(reviewOrder)),
+
+    advanceOrder: a
+      .mutation()
+      .arguments({ orderId: a.id().required(), status: a.ref('OrderStatus').required() })
       .returns(a.ref('Order'))
       .authorization((allow) => [allow.groups(['admin', 'super_admin'])])
       .handler(a.handler.function(reviewOrder)),

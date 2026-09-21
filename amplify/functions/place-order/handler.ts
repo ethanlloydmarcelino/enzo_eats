@@ -1,19 +1,15 @@
 import type { AppSyncIdentityCognito } from 'aws-lambda'
+import { createHash } from 'node:crypto'
+import {
+  AdminGetUserCommand,
+  CognitoIdentityProviderClient,
+} from '@aws-sdk/client-cognito-identity-provider'
 import { Amplify } from 'aws-amplify'
 import { generateClient } from 'aws-amplify/data'
 import { getAmplifyDataClientConfig } from '@aws-amplify/backend/function/runtime'
 import { env } from '$amplify/env/place-order'
 import type { Schema } from '../../data/resource'
-import {
-  CURRENCY,
-  MAX_LINES,
-  MAX_QUANTITY_PER_LINE,
-  MENU_PRICES,
-  PAYPAL_MINIMUM,
-  isValidGcashReference,
-  normalizeGcashReference,
-  round2,
-} from '../shared/checkout'
+import { CURRENCY, priceOrder, normalizeGcashReference, round2 } from '../shared/checkout'
 
 const { resourceConfig, libraryOptions } = await getAmplifyDataClientConfig(env)
 Amplify.configure(resourceConfig, libraryOptions)
@@ -21,6 +17,7 @@ const client = generateClient<Schema>()
 
 type Line = Schema['OrderLine']['type']
 type Arguments = {
+  requestId: string
   paymentMethod: 'CASH' | 'GCASH' | 'PAYPAL'
   paymentReference?: string | null
   note?: string | null
@@ -32,13 +29,10 @@ const fail = (message: string): never => {
 }
 
 // A short, human-sayable handle for the counter — the UUID stays the real key.
-const orderNumber = () => {
+const orderNumber = (id: string) => {
   const now = new Date()
   const stamp = now.toISOString().slice(2, 10).replace(/-/g, '')
-  const suffix = Math.floor(Math.random() * 46656)
-    .toString(36)
-    .toUpperCase()
-    .padStart(3, '0')
+  const suffix = id.slice(0, 10).toUpperCase()
   return `EE-${stamp}-${suffix}`
 }
 
@@ -48,55 +42,64 @@ export const handler: Schema['placeOrder']['functionHandler'] = async (event) =>
   const owner = claims.sub
   if (!owner) fail('NOT_AUTHENTICATED')
 
-  const { paymentMethod, lines, note } = event.arguments as Arguments
+  const { paymentMethod, lines, note, requestId } = event.arguments as Arguments
   const reference = (event.arguments as Arguments).paymentReference?.trim() ?? ''
 
-  if (!Array.isArray(lines) || lines.length === 0) fail('EMPTY_CART')
-  if (lines.length > MAX_LINES) fail('CART_TOO_LARGE')
-
-  // Reprice every line from the server table; the client's prices are ignored.
-  const priced = lines.map((line) => {
-    const item = MENU_PRICES[line.menuId]
-    if (!item) fail('UNKNOWN_ITEM')
-    const quantity = Math.trunc(line.quantity)
-    if (!Number.isFinite(quantity) || quantity < 1 || quantity > MAX_QUANTITY_PER_LINE) {
-      fail('INVALID_QUANTITY')
-    }
-    return {
-      menuId: line.menuId,
-      name: item.name,
-      option: line.option ?? null,
-      category: item.category,
-      unitPrice: item.price,
-      quantity,
-      lineTotal: round2(item.price * quantity),
-    }
-  })
+  if (!/^[a-zA-Z0-9-]{16,80}$/.test(requestId)) fail('INVALID_REQUEST_ID')
+  if ((note?.length ?? 0) > 500) fail('NOTE_TOO_LONG')
+  const priced = priceOrder(lines, paymentMethod, reference)
+  const id = createHash('sha256').update(`${owner}:${requestId}`).digest('hex')
+  const requestHash = createHash('sha256')
+    .update(
+      JSON.stringify({
+        priced,
+        paymentMethod,
+        reference: normalizeGcashReference(reference),
+        note: note?.trim() ?? '',
+      }),
+    )
+    .digest('hex')
+  const previous = await client.models.Order.get({ id })
+  if (previous.errors?.length) fail('ORDER_READ_FAILED')
+  if (previous.data) {
+    if (previous.data.requestHash !== requestHash) fail('REQUEST_ALREADY_USED')
+    return previous.data
+  }
 
   const subtotal = round2(priced.reduce((sum, line) => sum + line.lineTotal, 0))
 
-  if (paymentMethod === 'PAYPAL' && subtotal <= PAYPAL_MINIMUM) fail('PAYPAL_MINIMUM_NOT_MET')
-  if (paymentMethod === 'GCASH' && !isValidGcashReference(reference))
-    fail('GCASH_REFERENCE_INVALID')
-
+  // Access tokens do not contain profile attributes. Read the current profile
+  // from Cognito using the authenticated identity, never customer-supplied data.
+  const profile = await new CognitoIdentityProviderClient({}).send(
+    new AdminGetUserCommand({
+      UserPoolId: process.env.USER_POOL_ID!,
+      Username: identity!.username,
+    }),
+  )
+  const attributes = Object.fromEntries(
+    (profile.UserAttributes ?? []).map((a) => [a.Name!, a.Value ?? '']),
+  )
   const required = ['given_name', 'family_name', 'email', 'phone_number'] as const
-  if (required.some((claim) => !claims[claim])) fail('PROFILE_INCOMPLETE')
+  if (required.some((claim) => !attributes[claim]?.trim())) fail('PROFILE_INCOMPLETE')
 
   const now = new Date().toISOString()
   const { data: order, errors } = await client.models.Order.create({
-    orderNumber: orderNumber(),
+    id,
+    requestHash,
+    history: JSON.stringify([
+      { type: 'ORDER_PLACED', status: 'AWAITING_APPROVAL', at: now, actorId: owner },
+    ]),
+    orderNumber: orderNumber(id),
     owner,
-    // Every payment path lands here. Cash and GCash wait for an admin; PayPal
-    // waits for the same review while the paypal.me flow is manual.
     status: 'AWAITING_APPROVAL',
     paymentMethod,
     paymentReference: paymentMethod === 'GCASH' ? normalizeGcashReference(reference) : null,
     paymentVerified: false,
-    customerFirstName: claims.given_name,
-    customerLastName: claims.family_name,
-    customerEmail: claims.email,
-    customerPhone: claims.phone_number,
-    customerAddress: claims.address ?? null,
+    customerFirstName: attributes.given_name,
+    customerLastName: attributes.family_name,
+    customerEmail: attributes.email,
+    customerPhone: attributes.phone_number,
+    customerAddress: attributes.address || null,
     lines: priced,
     subtotal,
     total: subtotal,
@@ -105,11 +108,16 @@ export const handler: Schema['placeOrder']['functionHandler'] = async (event) =>
     placedAt: now,
   })
 
-  if (errors?.length || !order) fail(errors?.[0]?.message ?? 'ORDER_CREATE_FAILED')
+  if (errors?.length || !order) {
+    const concurrent = await client.models.Order.get({ id })
+    if (concurrent.data?.requestHash === requestHash) return concurrent.data
+    fail('ORDER_CREATE_FAILED')
+  }
 
-  // The event record is what the admin console's live feed and the audit trail
-  // both read; creating it is what "notifies" the admins.
-  await client.models.OrderEvent.create({
+  // Notifications subscribe to the durable Order mutation. This secondary feed
+  // may fail independently; the history above remains part of the order write.
+  const eventWrite = await client.models.OrderEvent.create({
+    id: `${id}:placed`,
     orderId: order!.id,
     owner,
     type: 'ORDER_PLACED',
@@ -119,11 +127,10 @@ export const handler: Schema['placeOrder']['functionHandler'] = async (event) =>
     message:
       paymentMethod === 'GCASH'
         ? `GCash reference ${normalizeGcashReference(reference)} submitted for verification.`
-        : paymentMethod === 'PAYPAL'
-          ? 'PayPal payment declared; awaiting admin verification.'
-          : 'Cash on pickup; awaiting admin approval.',
+        : 'Cash on pickup; awaiting admin approval.',
     occurredAt: now,
   })
+  if (eventWrite.errors?.length) console.error('ORDER_EVENT_WRITE_FAILED', { orderId: id })
 
   return order
 }

@@ -11,7 +11,6 @@ import { useTranslations } from '../../src/translations'
 // list is the only thing that has to change.
 const promotions = [
   { id: 'pickup', titleKey: 'promoPickupTitle', bodyKey: 'promoPickupBody' },
-  { id: 'paypal', titleKey: 'promoPaypalTitle', bodyKey: 'promoPaypalBody' },
   { id: 'gcash', titleKey: 'promoGcashTitle', bodyKey: 'promoGcashBody' },
 ]
 

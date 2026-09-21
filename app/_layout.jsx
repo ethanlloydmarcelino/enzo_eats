@@ -12,6 +12,8 @@ import { useLanguageStore } from '../src/store/useLanguageStore'
 import { useThemeStore } from '../src/store/useThemeStore'
 import { useColors } from '../src/theme'
 import { useAppFonts } from '../src/fonts'
+import { AccountSync } from '../src/components/account/AccountSync'
+import { OrderNotifications } from '../src/components/account/OrderNotifications'
 
 const queryClient = new QueryClient()
 
@@ -57,6 +59,8 @@ const RootLayout = () => {
             customer from the menu into the account screens. */}
         <CartDrawer />
         <AuthModal />
+        <AccountSync />
+        <OrderNotifications />
         {showLaunch && <LaunchScreen ready={appReady} onFinished={finishLaunch} />}
       </QueryClientProvider>
     </SafeAreaProvider>

@@ -3,8 +3,6 @@
 // enabled; the Lambda re-checks every one of them before an order is written.
 export const GCASH_NUMBER = '0916-408-2529'
 export const GCASH_NAME = 'Enzo Eats'
-export const PAYPAL_EMAIL = 'pay@enzoeats.ph'
-export const PAYPAL_ME_LINK = 'https://paypal.me/EnzoEats'
 
 // PayPal is offered only for baskets strictly above this subtotal.
 export const PAYPAL_MINIMUM = 500

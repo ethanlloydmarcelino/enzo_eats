@@ -10,11 +10,7 @@ export const cartToLines = (cart, language = 'en') =>
   cart.map((item) => ({
     menuId: item.id,
     name: typeof item.name === 'string' ? item.name : (item.name?.[language] ?? ''),
-    option: item.selectedOption
-      ? typeof item.selectedOption.name === 'string'
-        ? item.selectedOption.name
-        : (item.selectedOption.name?.[language] ?? item.selectedOption.id)
-      : null,
+    option: item.selectedOption ? item.selectedOption.id : null,
     category: item.category ?? null,
     unitPrice: item.price,
     quantity: item.quantity,
@@ -22,6 +18,9 @@ export const cartToLines = (cart, language = 'en') =>
   }))
 
 const messageKeys = {
+  PAYPAL_NOT_AVAILABLE: 'paypalNotAvailable',
+  INVALID_OPTION: 'orderErrorUnknownItem',
+  REQUEST_ALREADY_USED: 'orderErrorFailed',
   EMPTY_CART: 'orderErrorEmptyCart',
   CART_TOO_LARGE: 'orderErrorCartTooLarge',
   UNKNOWN_ITEM: 'orderErrorUnknownItem',
@@ -33,6 +32,7 @@ const messageKeys = {
   NOT_AUTHORIZED: 'orderErrorNotAuthorized',
   ORDER_NOT_FOUND: 'orderErrorNotFound',
   ORDER_ALREADY_DECIDED: 'orderErrorAlreadyDecided',
+  ConditionalCheckFailed: 'orderErrorAlreadyDecided',
 }
 
 // AppSync wraps a thrown Lambda error, so match on the code appearing anywhere
@@ -52,4 +52,15 @@ export const throwOnErrors = (result) => {
     throw error
   }
   return result.data
+}
+
+export const listAll = async (fetchPage) => {
+  const items = []
+  let nextToken
+  do {
+    const page = await fetchPage(nextToken)
+    items.push(...throwOnErrors(page))
+    nextToken = page.nextToken
+  } while (nextToken)
+  return items
 }

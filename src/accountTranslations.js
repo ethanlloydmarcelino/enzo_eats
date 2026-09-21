@@ -70,10 +70,7 @@ export const accountTranslations = {
     faqPickupA:
       'At the Enzo Eats counter. Bring your order number — and for GCash or PayPal, your payment confirmation.',
 
-    profilePhotoHint: 'Your photo appears on your account and beside your orders.',
-    profilePhotoLabel: 'Profile photo link',
-    profilePhotoUrlHint:
-      'Paste a link to a photo, or leave this empty to show your initials instead.',
+    profilePhotoHint: 'Your initials appear on your account and beside your orders.',
     profileEmailHint: 'Your email is your sign-in and cannot be changed here.',
 
     adminSection: 'Staff',
@@ -199,10 +196,7 @@ export const accountTranslations = {
     faqPickupA:
       'Sa counter ng Enzo Eats. Dalhin ang order number mo — at para sa GCash o PayPal, ang kumpirmasyon ng bayad.',
 
-    profilePhotoHint: 'Lalabas ang larawan mo sa account mo at katabi ng mga order mo.',
-    profilePhotoLabel: 'Link ng profile photo',
-    profilePhotoUrlHint:
-      'I-paste ang link ng larawan, o iwanang blangko para ipakita ang initials mo.',
+    profilePhotoHint: 'Lalabas ang initials mo sa account mo at katabi ng mga order mo.',
     profileEmailHint: 'Ang email mo ang sign-in mo at hindi ito mapapalitan dito.',
 
     adminSection: 'Staff',

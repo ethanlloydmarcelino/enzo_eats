@@ -1,4 +1,5 @@
 import { accountTranslations } from './accountTranslations'
+import { checkoutTranslations } from './checkoutTranslations'
 import { authTranslations } from './authTranslations'
 import { useLanguageStore } from './store/useLanguageStore'
 
@@ -6,6 +7,7 @@ const translations = {
   en: {
     ...authTranslations.en,
     ...accountTranslations.en,
+    ...checkoutTranslations.en,
     menu: 'Menu',
     howItWorks: 'How it works',
     support: 'Support',
@@ -90,6 +92,7 @@ const translations = {
   tl: {
     ...authTranslations.tl,
     ...accountTranslations.tl,
+    ...checkoutTranslations.tl,
     menu: 'Menu',
     howItWorks: 'Paano ito gumagana',
     support: 'Tulong',

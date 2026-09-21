@@ -1,6 +1,6 @@
 import { useEffect } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { cartToLines, dataClient, throwOnErrors } from './client'
+import { cartToLines, dataClient, throwOnErrors, listAll } from './client'
 import { useAuthStore } from '../store/useAuthStore'
 
 const ADMIN_ROLES = ['admin', 'super_admin']
@@ -28,15 +28,19 @@ const subscribeToOrders = (onChange) => {
 
 /** The customer's own orders. Owner-based auth scopes the list server-side. */
 export const useMyOrders = () => {
+  const userId = useAuthStore((state) => state.user?.userId)
   const status = useAuthStore((state) => state.status)
   const queryClient = useQueryClient()
-  const enabled = status === 'signedIn'
+  const enabled = status === 'signedIn' && !!userId
 
   const query = useQuery({
-    queryKey: ['orders', 'mine'],
+    queryKey: ['orders', 'mine', userId],
     enabled,
+    refetchInterval: 30000,
     queryFn: async () => {
-      const orders = throwOnErrors(await dataClient.models.Order.list())
+      const orders = await listAll((nextToken) =>
+        dataClient.models.Order.ordersByCustomer({ owner: userId }, { nextToken }),
+      )
       return [...orders].sort(byNewest)
     },
   })
@@ -46,25 +50,34 @@ export const useMyOrders = () => {
   useEffect(() => {
     if (!enabled) return undefined
     return subscribeToOrders(() => queryClient.invalidateQueries({ queryKey: ['orders', 'mine'] }))
-  }, [enabled, queryClient])
+  }, [enabled, queryClient, userId])
 
   return query
 }
 
 /** Every order awaiting a decision, for the admin console. */
-export const useOrdersAwaitingReview = () => {
+export const useOrdersAwaitingReview = (operational = false) => {
+  const userId = useAuthStore((state) => state.user?.userId)
   const role = useAuthStore((state) => state.role)
   const status = useAuthStore((state) => state.status)
   const queryClient = useQueryClient()
   const enabled = status === 'signedIn' && ADMIN_ROLES.includes(role)
 
   const query = useQuery({
-    queryKey: ['orders', 'review'],
+    queryKey: ['orders', 'review', userId, role, operational],
     enabled,
+    refetchInterval: 30000,
     queryFn: async () => {
-      const orders = throwOnErrors(
-        await dataClient.models.Order.ordersByStatus({ status: AWAITING }),
-      )
+      const statuses = operational ? ['APPROVED', 'PREPARING', 'READY'] : [AWAITING]
+      const orders = (
+        await Promise.all(
+          statuses.map((status) =>
+            listAll((nextToken) =>
+              dataClient.models.Order.ordersByStatus({ status }, { nextToken }),
+            ),
+          ),
+        )
+      ).flat()
       return [...orders].sort(byNewest)
     },
   })
@@ -72,7 +85,7 @@ export const useOrdersAwaitingReview = () => {
   useEffect(() => {
     if (!enabled) return undefined
     return subscribeToOrders(() => queryClient.invalidateQueries({ queryKey: ['orders'] }))
-  }, [enabled, queryClient])
+  }, [enabled, queryClient, userId, role])
 
   return query
 }
@@ -83,9 +96,10 @@ export const useReviewCount = () => useOrdersAwaitingReview().data?.length ?? 0
 export const usePlaceOrder = () => {
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: async ({ cart, language, paymentMethod, paymentReference, note }) =>
+    mutationFn: async ({ cart, language, paymentMethod, paymentReference, note, requestId }) =>
       throwOnErrors(
         await dataClient.mutations.placeOrder({
+          requestId,
           paymentMethod,
           paymentReference: paymentReference || null,
           note: note || null,
@@ -99,14 +113,16 @@ export const usePlaceOrder = () => {
 export const useReviewOrder = () => {
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: async ({ orderId, approve, decisionNote }) =>
-      throwOnErrors(
-        await dataClient.mutations.reviewOrder({
-          orderId,
-          approve,
-          decisionNote: decisionNote || null,
-        }),
-      ),
+    mutationFn: async ({ orderId, approve, decisionNote, status }) =>
+      status
+        ? throwOnErrors(await dataClient.mutations.advanceOrder({ orderId, status }))
+        : throwOnErrors(
+            await dataClient.mutations.reviewOrder({
+              orderId,
+              approve,
+              decisionNote: decisionNote || null,
+            }),
+          ),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['orders'] }),
   })
 }

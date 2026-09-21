@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useAuthStore } from '../store/useAuthStore'
 import { profileError } from '../auth/validation'
 import {
@@ -15,7 +15,6 @@ import {
 import {
   ActivityIndicator,
   Image,
-  Linking,
   Modal,
   Pressable,
   ScrollView,
@@ -34,8 +33,6 @@ import { useTranslations } from '../translations'
 import {
   GCASH_NAME,
   GCASH_NUMBER,
-  PAYPAL_EMAIL,
-  PAYPAL_ME_LINK,
   PAYPAL_MINIMUM,
   isValidGcashReference,
   normalizeGcashReference,
@@ -66,6 +63,7 @@ export const CartDrawer = () => {
   const [error, setError] = useState('')
   const [placedOrder, setPlacedOrder] = useState(null)
   const placeOrder = usePlaceOrder()
+  const request = useRef({ key: '', id: '' })
   const profileComplete =
     attributes &&
     !profileError({
@@ -95,6 +93,7 @@ export const CartDrawer = () => {
   }, [paymentMethod, paypalAllowed, setPaymentMethod])
 
   const close = () => {
+    if (placeOrder.isPending) return
     setCartOpen(false)
     if (step === 'placed') {
       setStep('cart')
@@ -104,14 +103,32 @@ export const CartDrawer = () => {
 
   const submit = (paymentReference = '') => {
     setError('')
+    const key = JSON.stringify({
+      cart: cart.map(({ cartId, quantity }) => ({ cartId, quantity })),
+      paymentMethod,
+      paymentReference,
+      user: useAuthStore.getState().user?.userId,
+    })
+    if (request.current.key !== key)
+      request.current = {
+        key,
+        id: `${Date.now()}-${Math.random().toString(36).slice(2)}-${Math.random().toString(36).slice(2)}`,
+      }
     placeOrder.mutate(
-      { cart, language, paymentMethod: paymentMethod.toUpperCase(), paymentReference },
+      {
+        cart,
+        language,
+        paymentMethod: paymentMethod.toUpperCase(),
+        paymentReference,
+        requestId: request.current.id,
+      },
       {
         onSuccess: (order) => {
           setPlacedOrder(order)
           setStep('placed')
           setReference('')
           clearCart()
+          request.current = { key: '', id: '' }
         },
         onError: (cause) => setError(orderErrorKey(cause)),
       },
@@ -121,9 +138,11 @@ export const CartDrawer = () => {
   const startCheckout = () => {
     if (!requireAccount()) return
     setError('')
-    // GCash and PayPal are both verified by an admin against a reference the
-    // customer copies from their payment receipt, so both collect one first.
-    if (paymentMethod === 'gcash' || paymentMethod === 'paypal') setStep('reference')
+    if (paymentMethod === 'paypal') {
+      setError('paypalNotAvailable')
+      return
+    }
+    if (paymentMethod === 'gcash') setStep('reference')
     else submit()
   }
 
@@ -148,7 +167,7 @@ export const CartDrawer = () => {
       label: t('payPaypal'),
       Icon: Globe,
       accent: PAYPAL_BLUE,
-      enabled: paypalAllowed,
+      enabled: false,
     },
   ]
   const checkoutAccent =
@@ -398,6 +417,9 @@ export const CartDrawer = () => {
                       </Text>
                     </View>
                   )}
+                  <Text style={[styles.noteText, { color: colors.mutedForeground }]}>
+                    {t('paypalNotAvailable')}
+                  </Text>
                   {paymentMethod === 'cash' && (
                     <View style={styles.noteRow}>
                       <Info size={14} color={colors.mutedForeground} />
@@ -439,45 +461,6 @@ export const CartDrawer = () => {
                         <Info size={14} color={GCASH_BLUE} />
                         <Text style={[styles.noteText, { color: colors.foreground }]}>
                           {t('gcashReferenceExplainer')}
-                        </Text>
-                      </View>
-                    </View>
-                  )}
-                  {paymentMethod === 'paypal' && paypalAllowed && (
-                    <View
-                      style={[
-                        styles.walletCard,
-                        { borderColor: PAYPAL_BLUE, backgroundColor: `${PAYPAL_BLUE}0d` },
-                      ]}
-                    >
-                      <Text style={[styles.walletText, { color: colors.foreground }]}>
-                        {t('paypalInstructions', { amount: subtotal.toFixed(2) })}
-                      </Text>
-                      <View style={styles.walletRow}>
-                        <Text style={[styles.walletRowLabel, { color: colors.mutedForeground }]}>
-                          {t('paypalAccount')}
-                        </Text>
-                        <Text
-                          selectable
-                          style={[styles.walletRowValue, { color: colors.foreground }]}
-                        >
-                          {PAYPAL_EMAIL}
-                        </Text>
-                      </View>
-                      <Pressable
-                        onPress={() => {
-                          if (requireAccount()) void Linking.openURL(PAYPAL_ME_LINK)
-                        }}
-                        style={[styles.walletButton, { borderColor: PAYPAL_BLUE }]}
-                      >
-                        <Text style={[styles.walletButtonText, { color: PAYPAL_BLUE }]}>
-                          {t('openPaypal')}
-                        </Text>
-                      </Pressable>
-                      <View style={styles.noteRow}>
-                        <Info size={14} color={PAYPAL_BLUE} />
-                        <Text style={[styles.noteText, { color: colors.foreground }]}>
-                          {t('paypalReferenceExplainer')}
                         </Text>
                       </View>
                     </View>

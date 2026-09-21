@@ -13,7 +13,8 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "doctor": "expo-doctor",
-    "test:auth": "tsx --test tests/auth.test.ts"
+    "test:auth": "tsx --test tests/auth.test.ts",
+    "test:checkout": "tsx --test tests/checkout.test.ts"
   },
   "dependencies": {
     "@aws-amplify/react-native": "^1.3.3",

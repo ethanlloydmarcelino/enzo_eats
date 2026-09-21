@@ -4,4 +4,5 @@ export const reviewOrder = defineFunction({
   name: 'review-order',
   entry: './handler.ts',
   timeoutSeconds: 30,
+  resourceGroupName: 'data',
 })

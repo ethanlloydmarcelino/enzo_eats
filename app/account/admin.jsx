@@ -20,6 +20,7 @@ const Admin = () => {
   const colors = useColors(useThemeStore((state) => state.theme))
   const { t } = useTranslations()
   const { data, isPending, isError, refetch } = useOrdersAwaitingReview()
+  const operational = useOrdersAwaitingReview(true)
   const review = useReviewOrder()
   const [notes, setNotes] = useState({})
   const [acting, setActing] = useState(null)
@@ -162,6 +163,32 @@ const Admin = () => {
               ))}
             </View>
           )}
+          <Text style={[styles.bannerText, { color: colors.foreground }]}>
+            {t('adminInProgress')}
+          </Text>
+          {operational.isError && <Text style={styles.error}>{t('ordersLoadError')}</Text>}
+          {(operational.data ?? []).map((order) => {
+            const next = { APPROVED: 'PREPARING', PREPARING: 'READY', READY: 'COMPLETED' }[
+              order.status
+            ]
+            return (
+              <OrderCard key={order.id} order={order} showCustomer>
+                <Pressable
+                  accessibilityRole="button"
+                  disabled={review.isPending}
+                  style={[styles.button, { backgroundColor: colors.primary }]}
+                  onPress={() =>
+                    review.mutate(
+                      { orderId: order.id, status: next },
+                      { onError: (cause) => setError(orderErrorKey(cause)) },
+                    )
+                  }
+                >
+                  <Text style={[styles.buttonText, { color: '#fff' }]}>{t(`advance${next}`)}</Text>
+                </Pressable>
+              </OrderCard>
+            )
+          })}
         </>
       )}
     </AccountScreen>

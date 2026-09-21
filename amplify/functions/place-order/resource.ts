@@ -4,4 +4,5 @@ export const placeOrder = defineFunction({
   name: 'place-order',
   entry: './handler.ts',
   timeoutSeconds: 30,
+  resourceGroupName: 'data',
 })
