@@ -17,3 +17,6 @@ node_modules
 .amplify
 amplify_outputs*
 amplifyconfiguration*
+
+# Local generated AWS client configuration; supplied by Hosting at build time.
+/config/
