@@ -1,53 +1,125 @@
-import { type ClientSchema, a, defineData } from '@aws-amplify/backend';
+import { type ClientSchema, a, defineData } from '@aws-amplify/backend'
+import { placeOrder } from '../functions/place-order/resource'
+import { reviewOrder } from '../functions/review-order/resource'
 
-/*== STEP 1 ===============================================================
-The section below creates a Todo database table with a "content" field. Try
-adding a new "isDone" field as a boolean. The authorization rule below
-specifies that any unauthenticated user can "create", "read", "update", 
-and "delete" any "Todo" records.
-=========================================================================*/
-const schema = a.schema({
-  Todo: a
-    .model({
-      content: a.string(),
-    })
-    .authorization((allow) => [allow.guest()]),
-});
+/**
+ * Orders are an append-only story: `Order` holds current state, `OrderEvent`
+ * records every transition that produced it. Clients never write either one
+ * directly — `placeOrder` and `reviewOrder` are the only doors in, so payment
+ * rules and approvals cannot be bypassed from a device.
+ */
+const schema = a
+  .schema({
+    OrderStatus: a.enum([
+      'AWAITING_APPROVAL',
+      'APPROVED',
+      'DENIED',
+      'PREPARING',
+      'READY',
+      'COMPLETED',
+      'CANCELLED',
+    ]),
 
-export type Schema = ClientSchema<typeof schema>;
+    PaymentMethod: a.enum(['CASH', 'GCASH', 'PAYPAL']),
+
+    OrderLine: a.customType({
+      menuId: a.integer().required(),
+      name: a.string().required(),
+      option: a.string(),
+      category: a.string(),
+      unitPrice: a.float().required(),
+      quantity: a.integer().required(),
+      lineTotal: a.float().required(),
+    }),
+
+    Order: a
+      .model({
+        orderNumber: a.string().required(),
+        // Cognito sub of the customer. Written by the Lambda from the caller's
+        // identity claim, never from the request body.
+        owner: a.string().required(),
+        status: a.ref('OrderStatus').required(),
+        paymentMethod: a.ref('PaymentMethod').required(),
+        // GCash reference number, or the PayPal transaction note.
+        paymentReference: a.string(),
+        paymentVerified: a.boolean().required(),
+        // Customer details snapshotted at order time — a later profile edit must
+        // not rewrite what the kitchen was told to expect.
+        customerFirstName: a.string().required(),
+        customerLastName: a.string().required(),
+        customerEmail: a.string().required(),
+        customerPhone: a.string().required(),
+        customerAddress: a.string(),
+        lines: a.ref('OrderLine').array().required(),
+        subtotal: a.float().required(),
+        total: a.float().required(),
+        currency: a.string().required(),
+        note: a.string(),
+        placedAt: a.datetime().required(),
+        decidedAt: a.datetime(),
+        decidedBy: a.string(),
+        decisionNote: a.string(),
+        events: a.hasMany('OrderEvent', 'orderId'),
+      })
+      .secondaryIndexes((index) => [
+        index('owner').sortKeys(['placedAt']).queryField('ordersByCustomer'),
+        index('status').sortKeys(['placedAt']).queryField('ordersByStatus'),
+      ])
+      .authorization((allow) => [
+        // Customers read their own orders and nothing else; only the Lambdas write.
+        allow.ownerDefinedIn('owner').identityClaim('sub').to(['read']),
+        allow.groups(['admin', 'super_admin']).to(['read']),
+      ]),
+
+    OrderEvent: a
+      .model({
+        orderId: a.id().required(),
+        order: a.belongsTo('Order', 'orderId'),
+        // Denormalized so a customer can read their own audit trail without a join.
+        owner: a.string().required(),
+        type: a.string().required(),
+        fromStatus: a.ref('OrderStatus'),
+        toStatus: a.ref('OrderStatus'),
+        actorId: a.string(),
+        actorRole: a.string(),
+        message: a.string(),
+        occurredAt: a.datetime().required(),
+      })
+      .authorization((allow) => [
+        allow.ownerDefinedIn('owner').identityClaim('sub').to(['read']),
+        allow.groups(['admin', 'super_admin']).to(['read']),
+      ]),
+
+    placeOrder: a
+      .mutation()
+      .arguments({
+        paymentMethod: a.ref('PaymentMethod').required(),
+        paymentReference: a.string(),
+        note: a.string(),
+        lines: a.ref('OrderLine').array().required(),
+      })
+      .returns(a.ref('Order'))
+      .authorization((allow) => [allow.authenticated()])
+      .handler(a.handler.function(placeOrder)),
+
+    reviewOrder: a
+      .mutation()
+      .arguments({
+        orderId: a.id().required(),
+        approve: a.boolean().required(),
+        decisionNote: a.string(),
+      })
+      .returns(a.ref('Order'))
+      .authorization((allow) => [allow.groups(['admin', 'super_admin'])])
+      .handler(a.handler.function(reviewOrder)),
+  })
+  .authorization((allow) => [allow.resource(placeOrder), allow.resource(reviewOrder)])
+
+export type Schema = ClientSchema<typeof schema>
 
 export const data = defineData({
   schema,
   authorizationModes: {
-    defaultAuthorizationMode: 'identityPool',
+    defaultAuthorizationMode: 'userPool',
   },
-});
-
-/*== STEP 2 ===============================================================
-Go to your frontend source code. From your client-side code, generate a
-Data client to make CRUDL requests to your table. (THIS SNIPPET WILL ONLY
-WORK IN THE FRONTEND CODE FILE.)
-
-Using JavaScript or Next.js React Server Components, Middleware, Server 
-Actions or Pages Router? Review how to generate Data clients for those use
-cases: https://docs.amplify.aws/gen2/build-a-backend/data/connect-to-API/
-=========================================================================*/
-
-/*
-"use client"
-import { generateClient } from "aws-amplify/data";
-import type { Schema } from "@/amplify/data/resource";
-
-const client = generateClient<Schema>() // use this Data client for CRUDL requests
-*/
-
-/*== STEP 3 ===============================================================
-Fetch records from the database and use them in your frontend component.
-(THIS SNIPPET WILL ONLY WORK IN THE FRONTEND CODE FILE.)
-=========================================================================*/
-
-/* For example, in a React component, you can use this snippet in your
-  function's RETURN statement */
-// const { data: todos } = await client.models.Todo.list()
-
-// return <ul>{todos.map(todo => <li key={todo.id}>{todo.content}</li>)}</ul>
+})

@@ -37,6 +37,9 @@ export const authTranslations = {
     authResend: 'Send another code',
     authCodeSent: 'A new code has been sent. Check your inbox and spam folder.',
     authVerified: 'Email verified. Sign in with your password.',
+    authAccountCreated:
+      'Your Enzo Eats account has been created. Enter the code we sent to finish verifying your email.',
+    authAccountReady: 'Your Enzo Eats account has been created. Sign in with your password.',
     authReset: 'Reset password',
     authResetDescription: 'Enter your account email to request a reset code.',
     authSendReset: 'Send reset code',
@@ -69,8 +72,6 @@ export const authTranslations = {
     authUnsupportedStep:
       'This account needs an additional sign-in step. Please contact Enzo Eats support.',
     authCheckout: 'Sign in to continue',
-    checkoutUnavailable:
-      'Online checkout is not available yet. Your bag is saved for this visit; no order has been placed.',
   },
   tl: {
     account: 'Account',
@@ -110,6 +111,9 @@ export const authTranslations = {
     authResend: 'Magpadala ulit ng code',
     authCodeSent: 'Naipadala ang bagong code. Tingnan ang inbox at spam folder.',
     authVerified: 'Na-verify ang email. Mag-sign in gamit ang password.',
+    authAccountCreated:
+      'Nagawa na ang Enzo Eats account mo. Ilagay ang code na ipinadala namin para matapos ang pag-verify ng email.',
+    authAccountReady: 'Nagawa na ang Enzo Eats account mo. Mag-sign in gamit ang password mo.',
     authReset: 'I-reset ang password',
     authResetDescription: 'Ilagay ang email ng account para humingi ng reset code.',
     authSendReset: 'Ipadala ang reset code',
@@ -141,7 +145,5 @@ export const authTranslations = {
     authUnsupportedStep:
       'Kailangan ng karagdagang hakbang para mag-sign in. Kontakin ang Enzo Eats support.',
     authCheckout: 'Mag-sign in para magpatuloy',
-    checkoutUnavailable:
-      'Hindi pa available ang online checkout. Nasa bag pa ang mga napili mo sa pagbisitang ito; wala pang order na naipadala.',
   },
 }

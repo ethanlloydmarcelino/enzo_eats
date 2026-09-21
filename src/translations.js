@@ -1,9 +1,11 @@
+import { accountTranslations } from './accountTranslations'
 import { authTranslations } from './authTranslations'
 import { useLanguageStore } from './store/useLanguageStore'
 
 const translations = {
   en: {
     ...authTranslations.en,
+    ...accountTranslations.en,
     menu: 'Menu',
     howItWorks: 'How it works',
     support: 'Support',
@@ -87,6 +89,7 @@ const translations = {
   },
   tl: {
     ...authTranslations.tl,
+    ...accountTranslations.tl,
     menu: 'Menu',
     howItWorks: 'Paano ito gumagana',
     support: 'Tulong',

@@ -15,6 +15,8 @@ export const auth = defineAuth({
     familyName: { required: true, mutable: true },
     phoneNumber: { required: true, mutable: true },
     address: { required: false, mutable: true },
+    // Maps to the standard `picture` claim the account page reads for the avatar.
+    profilePicture: { required: false, mutable: true },
   },
   groups: ['super_admin', 'admin', 'user'],
   triggers: { preSignUp, postConfirmation },

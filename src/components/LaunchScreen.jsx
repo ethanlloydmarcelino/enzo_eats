@@ -61,7 +61,9 @@ export const LaunchScreen = ({ ready, onFinished }) => {
           <View style={[styles.mark, { backgroundColor: colors.primary }]}>
             <BrandMark size={26} color="#fff" />
           </View>
-          <View style={[styles.leaf, { backgroundColor: colors.coral, borderColor: colors.background }]}>
+          <View
+            style={[styles.leaf, { backgroundColor: colors.coral, borderColor: colors.background }]}
+          >
             <Leaf size={13} color="#fff" strokeWidth={2.75} />
           </View>
         </View>

@@ -1,3 +1,4 @@
+import { router } from 'expo-router'
 import { Home, Search, ShoppingBag, Utensils, UserRound } from 'lucide-react-native'
 import { Pressable, StyleSheet, Text, View, useWindowDimensions } from 'react-native'
 import { useAuthStore } from '../store/useAuthStore'
@@ -9,6 +10,7 @@ import { useTranslations } from '../translations'
 
 export const MobileNav = ({ onHome, onMenu, onSearch }) => {
   const openAccount = useAuthStore((state) => state.openAccount)
+  const user = useAuthStore((state) => state.user)
   const setCartOpen = useOrderStore((state) => state.setCartOpen)
   const cart = useOrderStore((state) => state.cart)
   const colors = useColors(useThemeStore((state) => state.theme))
@@ -25,7 +27,11 @@ export const MobileNav = ({ onHome, onMenu, onSearch }) => {
       Icon: ShoppingBag,
       action: () => setCartOpen(true),
     },
-    { label: t('account'), Icon: UserRound, action: () => openAccount() },
+    {
+      label: t('account'),
+      Icon: UserRound,
+      action: () => (user ? router.push('/account') : openAccount()),
+    },
   ]
   return (
     <View style={[styles.nav, { backgroundColor: colors.card, borderTopColor: colors.border }]}>

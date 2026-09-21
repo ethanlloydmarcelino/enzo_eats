@@ -1,3 +1,4 @@
+import { router } from 'expo-router'
 import { Search, ShoppingBag, UserRound } from 'lucide-react-native'
 import { Pressable, StyleSheet, Text, View, useWindowDimensions } from 'react-native'
 import { Logo } from './Logo'
@@ -13,6 +14,9 @@ import { useTranslations } from '../translations'
 export const Header = ({ onMenu, onSearch }) => {
   const openAccount = useAuthStore((state) => state.openAccount)
   const user = useAuthStore((state) => state.user)
+  // Signed in, the icon is a door to the account pages; signed out it is still
+  // the quickest way to the sign-in sheet.
+  const goToAccount = () => (user ? router.push('/account') : openAccount())
   const cart = useOrderStore((state) => state.cart)
   const setCartOpen = useOrderStore((state) => state.setCartOpen)
   const colors = useColors(useThemeStore((state) => state.theme))
@@ -53,7 +57,7 @@ export const Header = ({ onMenu, onSearch }) => {
             <Pressable
               accessibilityRole="button"
               accessibilityLabel={t(user ? 'account' : 'authSignIn')}
-              onPress={() => openAccount()}
+              onPress={goToAccount}
               style={styles.iconButton}
             >
               <UserRound size={19} color={colors.foreground} />

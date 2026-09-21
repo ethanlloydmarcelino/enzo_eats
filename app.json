@@ -3,8 +3,11 @@
     "name": "Enzo Eats",
     "slug": "enzo-eats",
     "version": "1.0.0",
+    "scheme": "enzoeats",
     "orientation": "portrait",
     "userInterfaceStyle": "automatic",
+    "icon": "./assets/images/icon.png",
+    "primaryColor": "#1bad69",
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.enzoeats.app"
@@ -12,16 +15,21 @@
     "android": {
       "package": "com.enzoeats.app",
       "adaptiveIcon": {
+        "foregroundImage": "./assets/images/adaptive-icon.png",
+        "monochromeImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#18a766"
       }
     },
     "web": {
       "bundler": "metro",
       "output": "single",
-      "favicon": "./assets/images/favicon.png"
+      "favicon": "./assets/images/favicon.png",
+      "themeColor": "#1bad69",
+      "backgroundColor": "#1bad69",
+      "name": "Enzo Eats",
+      "shortName": "Enzo Eats",
+      "display": "standalone"
     },
-    "plugins": [
-      "expo-font"
-    ]
+    "plugins": ["expo-font", "expo-router"]
   }
 }

@@ -1,8 +1,19 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useAuthStore } from '../store/useAuthStore'
 import { profileError } from '../auth/validation'
-import { Banknote, Globe, Minus, Plus, ShoppingBag, Smartphone, X } from 'lucide-react-native'
 import {
+  Banknote,
+  CheckCircle2,
+  Globe,
+  Info,
+  Minus,
+  Plus,
+  ShoppingBag,
+  Smartphone,
+  X,
+} from 'lucide-react-native'
+import {
+  ActivityIndicator,
   Image,
   Linking,
   Modal,
@@ -10,6 +21,7 @@ import {
   ScrollView,
   StyleSheet,
   Text,
+  TextInput,
   View,
   useWindowDimensions,
 } from 'react-native'
@@ -19,16 +31,23 @@ import { useOrderStore } from '../store/useOrderStore'
 import { useThemeStore } from '../store/useThemeStore'
 import { useColors } from '../theme'
 import { useTranslations } from '../translations'
+import {
+  GCASH_NAME,
+  GCASH_NUMBER,
+  PAYPAL_EMAIL,
+  PAYPAL_ME_LINK,
+  PAYPAL_MINIMUM,
+  isValidGcashReference,
+  normalizeGcashReference,
+  paypalAvailable,
+} from '../checkout/rules'
+import { orderErrorKey } from '../orders/client'
+import { usePlaceOrder } from '../orders/useOrders'
 
 // Each e-wallet's own brand color, used regardless of app theme so an option
 // reads as that wallet rather than as another primary-colored app control.
 const GCASH_BLUE = '#0072CE'
 const PAYPAL_BLUE = '#0070BA'
-// Placeholder merchant details — swap for Enzo Eats' real accounts before launch.
-const GCASH_NUMBER = '0917 123 4567'
-const GCASH_NAME = 'Enzo Eats'
-const PAYPAL_EMAIL = 'pay@enzoeats.ph'
-const PAYPAL_ME_LINK = 'https://paypal.me/EnzoEats'
 
 export const CartDrawer = () => {
   const {
@@ -41,7 +60,12 @@ export const CartDrawer = () => {
     setPaymentMethod,
   } = useOrderStore()
   const { status, attributes, accountOpen, openAccount } = useAuthStore()
-  const [checkoutNotice, setCheckoutNotice] = useState(false)
+  // 'cart' -> optionally 'reference' (GCash / PayPal proof) -> 'placed'.
+  const [step, setStep] = useState('cart')
+  const [reference, setReference] = useState('')
+  const [error, setError] = useState('')
+  const [placedOrder, setPlacedOrder] = useState(null)
+  const placeOrder = usePlaceOrder()
   const profileComplete =
     attributes &&
     !profileError({
@@ -62,11 +86,70 @@ export const CartDrawer = () => {
   const insets = useSafeAreaInsets()
   const { width } = useWindowDimensions()
   const subtotal = cart.reduce((sum, item) => sum + item.price * item.quantity, 0)
+  const paypalAllowed = paypalAvailable(subtotal)
+
+  // A basket can drop below the PayPal threshold after it was selected; fall
+  // back rather than leaving an unusable method armed.
+  useEffect(() => {
+    if (paymentMethod === 'paypal' && !paypalAllowed) setPaymentMethod('cash')
+  }, [paymentMethod, paypalAllowed, setPaymentMethod])
+
+  const close = () => {
+    setCartOpen(false)
+    if (step === 'placed') {
+      setStep('cart')
+      setPlacedOrder(null)
+    }
+  }
+
+  const submit = (paymentReference = '') => {
+    setError('')
+    placeOrder.mutate(
+      { cart, language, paymentMethod: paymentMethod.toUpperCase(), paymentReference },
+      {
+        onSuccess: (order) => {
+          setPlacedOrder(order)
+          setStep('placed')
+          setReference('')
+          clearCart()
+        },
+        onError: (cause) => setError(orderErrorKey(cause)),
+      },
+    )
+  }
+
+  const startCheckout = () => {
+    if (!requireAccount()) return
+    setError('')
+    // GCash and PayPal are both verified by an admin against a reference the
+    // customer copies from their payment receipt, so both collect one first.
+    if (paymentMethod === 'gcash' || paymentMethod === 'paypal') setStep('reference')
+    else submit()
+  }
+
+  const confirmReference = () => {
+    const value = normalizeGcashReference(reference)
+    if (paymentMethod === 'gcash' && !isValidGcashReference(value)) {
+      setError('orderErrorGcashReference')
+      return
+    }
+    if (paymentMethod === 'paypal' && !value.trim()) {
+      setError('orderErrorPaypalReference')
+      return
+    }
+    submit(value)
+  }
 
   const paymentMethods = [
-    { id: 'cash', label: t('payCash'), Icon: Banknote, accent: colors.primary },
-    { id: 'gcash', label: t('payGcash'), Icon: Smartphone, accent: GCASH_BLUE },
-    { id: 'paypal', label: t('payPaypal'), Icon: Globe, accent: PAYPAL_BLUE },
+    { id: 'cash', label: t('payCash'), Icon: Banknote, accent: colors.primary, enabled: true },
+    { id: 'gcash', label: t('payGcash'), Icon: Smartphone, accent: GCASH_BLUE, enabled: true },
+    {
+      id: 'paypal',
+      label: t('payPaypal'),
+      Icon: Globe,
+      accent: PAYPAL_BLUE,
+      enabled: paypalAllowed,
+    },
   ]
   const checkoutAccent =
     paymentMethods.find((method) => method.id === paymentMethod)?.accent ?? colors.primary
@@ -77,19 +160,99 @@ export const CartDrawer = () => {
         ? t('continuePaypal')
         : t('pickupCheckout')
 
+  const isGcash = paymentMethod === 'gcash'
+  const referenceAccent = isGcash ? GCASH_BLUE : PAYPAL_BLUE
+
+  const renderReferenceStep = () => (
+    <View style={styles.referenceStep}>
+      <Text accessibilityRole="header" style={[styles.stepTitle, { color: colors.foreground }]}>
+        {t(isGcash ? 'gcashRefTitle' : 'paypalRefTitle')}
+      </Text>
+      <Text style={[styles.walletText, { color: colors.mutedForeground }]}>
+        {t(isGcash ? 'gcashRefBody' : 'paypalRefBody', { amount: subtotal.toFixed(2) })}
+      </Text>
+      <View style={styles.field}>
+        <Text style={[styles.label, { color: colors.foreground }]}>
+          {t(isGcash ? 'gcashRefLabel' : 'paypalRefLabel')}
+        </Text>
+        <TextInput
+          accessibilityLabel={t(isGcash ? 'gcashRefLabel' : 'paypalRefLabel')}
+          value={reference}
+          onChangeText={setReference}
+          editable={!placeOrder.isPending}
+          autoFocus
+          keyboardType={isGcash ? 'number-pad' : 'default'}
+          autoCapitalize="none"
+          autoCorrect={false}
+          maxLength={64}
+          placeholder={isGcash ? '0000 0000 0000' : t('paypalRefPlaceholder')}
+          placeholderTextColor={colors.mutedForeground}
+          style={[
+            styles.input,
+            {
+              color: colors.foreground,
+              borderColor: colors.border,
+              backgroundColor: colors.background,
+            },
+          ]}
+        />
+      </View>
+      {!!error && (
+        <Text accessibilityRole="alert" accessibilityLiveRegion="assertive" style={styles.error}>
+          {t(error)}
+        </Text>
+      )}
+      <Pressable
+        accessibilityRole="button"
+        disabled={placeOrder.isPending}
+        onPress={confirmReference}
+        style={[
+          styles.checkout,
+          { backgroundColor: referenceAccent, opacity: placeOrder.isPending ? 0.6 : 1 },
+        ]}
+      >
+        {placeOrder.isPending ? (
+          <ActivityIndicator color="#fff" />
+        ) : (
+          <Text style={styles.checkoutText}>{t('submitReference')}</Text>
+        )}
+      </Pressable>
+      <Pressable
+        onPress={() => {
+          setStep('cart')
+          setError('')
+        }}
+        disabled={placeOrder.isPending}
+      >
+        <Text style={[styles.clear, { color: colors.mutedForeground }]}>{t('backToBag')}</Text>
+      </Pressable>
+    </View>
+  )
+
+  const renderPlaced = () => (
+    <View style={styles.empty}>
+      <CheckCircle2 size={52} strokeWidth={1.5} color={colors.primary} />
+      <Text accessibilityRole="header" style={[styles.emptyTitle, { color: colors.foreground }]}>
+        {t('orderPlacedTitle')}
+      </Text>
+      <Text style={[styles.emptyText, { color: colors.mutedForeground, textAlign: 'center' }]}>
+        {t('orderPlacedBody', { number: placedOrder?.orderNumber ?? '' })}
+      </Text>
+      <Pressable onPress={close} style={[styles.primary, { backgroundColor: colors.primary }]}>
+        <Text style={styles.primaryText}>{t('done')}</Text>
+      </Pressable>
+    </View>
+  )
+
   return (
     <Modal
       visible={cartOpen && !accountOpen}
       transparent
       animationType="slide"
-      onRequestClose={() => setCartOpen(false)}
+      onRequestClose={close}
     >
       <View style={[styles.overlay, { backgroundColor: colors.overlay }]}>
-        <Pressable
-          style={styles.dismissArea}
-          onPress={() => setCartOpen(false)}
-          accessibilityLabel={t('closeCart')}
-        />
+        <Pressable style={styles.dismissArea} onPress={close} accessibilityLabel={t('closeCart')} />
         <View
           style={[
             styles.sheet,
@@ -104,14 +267,15 @@ export const CartDrawer = () => {
                 {t('pickupReady')}
               </Text>
             </View>
-            <Pressable
-              onPress={() => setCartOpen(false)}
-              style={[styles.close, { backgroundColor: colors.muted }]}
-            >
+            <Pressable onPress={close} style={[styles.close, { backgroundColor: colors.muted }]}>
               <X size={20} color={colors.foreground} />
             </Pressable>
           </View>
-          {!cart.length ? (
+          {step === 'placed' ? (
+            renderPlaced()
+          ) : step === 'reference' ? (
+            <ScrollView keyboardShouldPersistTaps="handled">{renderReferenceStep()}</ScrollView>
+          ) : !cart.length ? (
             <View style={styles.empty}>
               <ShoppingBag size={46} strokeWidth={1.4} color={colors.mutedForeground} />
               <Text style={[styles.emptyTitle, { color: colors.foreground }]}>{t('emptyBag')}</Text>
@@ -119,7 +283,7 @@ export const CartDrawer = () => {
                 {t('emptyBagText')}
               </Text>
               <Pressable
-                onPress={() => setCartOpen(false)}
+                onPress={close}
                 style={[styles.primary, { backgroundColor: colors.primary }]}
               >
                 <Text style={styles.primaryText}>{t('browseMenu')}</Text>
@@ -187,17 +351,26 @@ export const CartDrawer = () => {
                     {t('paymentMethod')}
                   </Text>
                   <View style={styles.paymentOptions}>
-                    {paymentMethods.map(({ id, label, Icon, accent }) => {
+                    {paymentMethods.map(({ id, label, Icon, accent, enabled }) => {
                       const active = paymentMethod === id
                       return (
                         <Pressable
                           key={id}
+                          accessibilityRole="button"
+                          accessibilityState={{ disabled: !enabled, selected: active }}
+                          accessibilityHint={
+                            enabled
+                              ? undefined
+                              : t('paypalMinimumNotice', { amount: PAYPAL_MINIMUM })
+                          }
+                          disabled={!enabled}
                           onPress={() => setPaymentMethod(id)}
                           style={[
                             styles.paymentOption,
                             {
                               borderColor: active ? accent : colors.border,
                               backgroundColor: active ? `${accent}14` : colors.card,
+                              opacity: enabled ? 1 : 0.45,
                             },
                           ]}
                         >
@@ -214,6 +387,25 @@ export const CartDrawer = () => {
                       )
                     })}
                   </View>
+                  {!paypalAllowed && (
+                    <View style={styles.noteRow}>
+                      <Info size={14} color={colors.mutedForeground} />
+                      <Text
+                        accessibilityLiveRegion="polite"
+                        style={[styles.noteText, { color: colors.mutedForeground }]}
+                      >
+                        {t('paypalMinimumNotice', { amount: PAYPAL_MINIMUM })}
+                      </Text>
+                    </View>
+                  )}
+                  {paymentMethod === 'cash' && (
+                    <View style={styles.noteRow}>
+                      <Info size={14} color={colors.mutedForeground} />
+                      <Text style={[styles.noteText, { color: colors.mutedForeground }]}>
+                        {t('cashApprovalNotice')}
+                      </Text>
+                    </View>
+                  )}
                   {paymentMethod === 'gcash' && (
                     <View
                       style={[
@@ -243,9 +435,15 @@ export const CartDrawer = () => {
                           {GCASH_NAME}
                         </Text>
                       </View>
+                      <View style={styles.noteRow}>
+                        <Info size={14} color={GCASH_BLUE} />
+                        <Text style={[styles.noteText, { color: colors.foreground }]}>
+                          {t('gcashReferenceExplainer')}
+                        </Text>
+                      </View>
                     </View>
                   )}
-                  {paymentMethod === 'paypal' && (
+                  {paymentMethod === 'paypal' && paypalAllowed && (
                     <View
                       style={[
                         styles.walletCard,
@@ -276,36 +474,48 @@ export const CartDrawer = () => {
                           {t('openPaypal')}
                         </Text>
                       </Pressable>
+                      <View style={styles.noteRow}>
+                        <Info size={14} color={PAYPAL_BLUE} />
+                        <Text style={[styles.noteText, { color: colors.foreground }]}>
+                          {t('paypalReferenceExplainer')}
+                        </Text>
+                      </View>
                     </View>
                   )}
                 </View>
-                <Pressable
-                  accessibilityRole="button"
-                  disabled={status === 'loading'}
-                  onPress={() => {
-                    if (requireAccount()) setCheckoutNotice(true)
-                  }}
-                  style={[
-                    styles.checkout,
-                    { backgroundColor: checkoutAccent, opacity: status === 'loading' ? 0.5 : 1 },
-                  ]}
-                >
-                  <Text style={styles.checkoutText}>
-                    {status === 'loading'
-                      ? t('authLoading')
-                      : status !== 'signedIn'
-                        ? t('authCheckout')
-                        : checkoutLabel}
-                  </Text>
-                </Pressable>
-                {checkoutNotice && status === 'signedIn' && (
+                {!!error && (
                   <Text
-                    accessibilityLiveRegion="polite"
-                    style={[styles.walletText, { color: colors.mutedForeground, marginTop: 12 }]}
+                    accessibilityRole="alert"
+                    accessibilityLiveRegion="assertive"
+                    style={styles.error}
                   >
-                    {t('checkoutUnavailable')}
+                    {t(error)}
                   </Text>
                 )}
+                <Pressable
+                  accessibilityRole="button"
+                  disabled={status === 'loading' || placeOrder.isPending}
+                  onPress={startCheckout}
+                  style={[
+                    styles.checkout,
+                    {
+                      backgroundColor: checkoutAccent,
+                      opacity: status === 'loading' || placeOrder.isPending ? 0.5 : 1,
+                    },
+                  ]}
+                >
+                  {placeOrder.isPending ? (
+                    <ActivityIndicator color="#fff" />
+                  ) : (
+                    <Text style={styles.checkoutText}>
+                      {status === 'loading'
+                        ? t('authLoading')
+                        : status !== 'signedIn'
+                          ? t('authCheckout')
+                          : checkoutLabel}
+                    </Text>
+                  )}
+                </Pressable>
                 <Pressable onPress={clearCart}>
                   <Text style={[styles.clear, { color: colors.mutedForeground }]}>
                     {t('clearBag')}
@@ -349,8 +559,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   empty: { minHeight: 420, alignItems: 'center', justifyContent: 'center', padding: 30 },
-  emptyTitle: { fontSize: 24, fontFamily: fonts.black, marginTop: 18 },
-  emptyText: { fontSize: 14, marginTop: 8 },
+  emptyTitle: { fontSize: 24, fontFamily: fonts.black, marginTop: 18, textAlign: 'center' },
+  emptyText: { fontSize: 14, marginTop: 8, lineHeight: 21 },
   primary: { marginTop: 24, borderRadius: 10, paddingHorizontal: 20, paddingVertical: 13 },
   primaryText: { color: '#fff', fontFamily: fonts.extraBold },
   items: { padding: 20 },
@@ -415,7 +625,28 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
   walletButtonText: { fontSize: 13, fontFamily: fonts.extraBold },
-  checkout: { minHeight: 50, borderRadius: 11, alignItems: 'center', justifyContent: 'center' },
+  noteRow: { flexDirection: 'row', gap: 8, alignItems: 'flex-start', marginTop: 10 },
+  noteText: { flex: 1, fontSize: 12, lineHeight: 18 },
+  referenceStep: { padding: 22 },
+  stepTitle: { fontSize: 20, fontFamily: fonts.black, letterSpacing: -0.5, marginBottom: 8 },
+  field: { gap: 6, marginTop: 16, marginBottom: 4 },
+  label: { fontSize: 13, fontFamily: fonts.bold },
+  input: {
+    borderWidth: 1,
+    borderRadius: 10,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    minHeight: 48,
+    fontSize: 16,
+  },
+  checkout: {
+    minHeight: 50,
+    borderRadius: 11,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 12,
+  },
   checkoutText: { color: '#fff', fontFamily: fonts.extraBold },
   clear: { textAlign: 'center', fontSize: 12, fontFamily: fonts.bold, marginTop: 15 },
+  error: { color: '#c43c3c', fontSize: 13, lineHeight: 20, marginTop: 12 },
 })

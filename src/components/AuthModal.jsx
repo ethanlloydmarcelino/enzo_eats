@@ -207,11 +207,13 @@ const AccountForm = ({ colors, onClose }) => {
             ),
           },
         })
+        // Cognito accepted the account, so confirm the success explicitly rather
+        // than dropping the user on a code screen with no acknowledgement.
         if (result.nextStep.signUpStep === 'CONFIRM_SIGN_UP') {
-          go('confirm')
+          go('confirm', 'authAccountCreated')
           cooldown()
         } else if (result.isSignUpComplete) {
-          go('signIn', 'authVerified')
+          go('signIn', 'authAccountReady')
         } else {
           setError('authUnsupportedStep')
         }
@@ -220,7 +222,7 @@ const AccountForm = ({ colors, onClose }) => {
           username: email,
           confirmationCode: values.code.trim(),
         })
-        if (result.isSignUpComplete) go('signIn', 'authVerified')
+        if (result.isSignUpComplete) go('signIn', 'authAccountReady')
         else setError('authUnsupportedStep')
       } else if (step === 'signIn') {
         await handleSignIn(await signIn({ username: email, password: values.password }))

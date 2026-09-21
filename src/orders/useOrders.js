@@ -1,0 +1,112 @@
+import { useEffect } from 'react'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { cartToLines, dataClient, throwOnErrors } from './client'
+import { useAuthStore } from '../store/useAuthStore'
+
+const ADMIN_ROLES = ['admin', 'super_admin']
+
+export const AWAITING = 'AWAITING_APPROVAL'
+export const OPEN_STATUSES = [AWAITING, 'APPROVED', 'PREPARING', 'READY']
+export const isPastOrder = (order) => ['COMPLETED', 'DENIED', 'CANCELLED'].includes(order.status)
+
+const byNewest = (a, b) => (a.placedAt < b.placedAt ? 1 : -1)
+
+/**
+ * Subscribe to order creates and updates, tolerating a backend that has not been
+ * deployed yet — `amplify_outputs.json` can still describe an older schema, and a
+ * missing model must degrade to "no live updates", never crash the screen.
+ */
+const subscribeToOrders = (onChange) => {
+  const model = dataClient.models?.Order
+  if (!model?.onCreate) return () => {}
+  const subscriptions = [
+    model.onCreate().subscribe({ next: onChange, error: () => {} }),
+    model.onUpdate().subscribe({ next: onChange, error: () => {} }),
+  ]
+  return () => subscriptions.forEach((subscription) => subscription.unsubscribe())
+}
+
+/** The customer's own orders. Owner-based auth scopes the list server-side. */
+export const useMyOrders = () => {
+  const status = useAuthStore((state) => state.status)
+  const queryClient = useQueryClient()
+  const enabled = status === 'signedIn'
+
+  const query = useQuery({
+    queryKey: ['orders', 'mine'],
+    enabled,
+    queryFn: async () => {
+      const orders = throwOnErrors(await dataClient.models.Order.list())
+      return [...orders].sort(byNewest)
+    },
+  })
+
+  // Live updates: the customer sees an admin's approval or denial without
+  // refreshing, which is the whole point of the event-driven flow.
+  useEffect(() => {
+    if (!enabled) return undefined
+    return subscribeToOrders(() => queryClient.invalidateQueries({ queryKey: ['orders', 'mine'] }))
+  }, [enabled, queryClient])
+
+  return query
+}
+
+/** Every order awaiting a decision, for the admin console. */
+export const useOrdersAwaitingReview = () => {
+  const role = useAuthStore((state) => state.role)
+  const status = useAuthStore((state) => state.status)
+  const queryClient = useQueryClient()
+  const enabled = status === 'signedIn' && ADMIN_ROLES.includes(role)
+
+  const query = useQuery({
+    queryKey: ['orders', 'review'],
+    enabled,
+    queryFn: async () => {
+      const orders = throwOnErrors(
+        await dataClient.models.Order.ordersByStatus({ status: AWAITING }),
+      )
+      return [...orders].sort(byNewest)
+    },
+  })
+
+  useEffect(() => {
+    if (!enabled) return undefined
+    return subscribeToOrders(() => queryClient.invalidateQueries({ queryKey: ['orders'] }))
+  }, [enabled, queryClient])
+
+  return query
+}
+
+/** Count of orders needing a decision, for the badge on the admin entry point. */
+export const useReviewCount = () => useOrdersAwaitingReview().data?.length ?? 0
+
+export const usePlaceOrder = () => {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: async ({ cart, language, paymentMethod, paymentReference, note }) =>
+      throwOnErrors(
+        await dataClient.mutations.placeOrder({
+          paymentMethod,
+          paymentReference: paymentReference || null,
+          note: note || null,
+          lines: cartToLines(cart, language),
+        }),
+      ),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['orders'] }),
+  })
+}
+
+export const useReviewOrder = () => {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: async ({ orderId, approve, decisionNote }) =>
+      throwOnErrors(
+        await dataClient.mutations.reviewOrder({
+          orderId,
+          approve,
+          decisionNote: decisionNote || null,
+        }),
+      ),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['orders'] }),
+  })
+}
