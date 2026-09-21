@@ -8,6 +8,7 @@ frontend:
         - npm install --global npm@10.9.9
         - node --version
         - npm --version
+        - node scripts/repair-amplify-lock.mjs
         - npm ci --cache .npm --prefer-offline
         - node scripts/restore-amplify-outputs.mjs
     build:

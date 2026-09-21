@@ -5,6 +5,11 @@
   "packageManager": "npm@10.9.9",
   "main": "expo-router/entry",
   "scripts": {
+    "postinstall": "node scripts/repair-amplify-lock.mjs",
+    "repair:lockfile": "node scripts/repair-amplify-lock.mjs",
+    "check:lockfile": "node scripts/repair-amplify-lock.mjs --check",
+    "sync:hosting": "node scripts/set-hosting-outputs.mjs",
+    "test:build-config": "node --test tests/amplify-lock.test.mjs",
     "start": "expo start",
     "android": "expo start --android",
     "ios": "expo start --ios",
