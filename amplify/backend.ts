@@ -12,6 +12,11 @@ const backend = defineBackend({
   reviewOrder,
 })
 
+// This sandbox already has its required standard attributes. Cognito's update
+// handler attempts to add them again when Schema is sent during an update.
+// Omit that immutable declaration while preserving the existing pool and users.
+backend.auth.resources.cfnResources.cfnUserPool.addPropertyDeletionOverride('Schema')
+
 backend.placeOrder.addEnvironment('USER_POOL_ID', backend.auth.resources.userPool.userPoolId)
 backend.placeOrder.resources.lambda.addToRolePolicy(
   new PolicyStatement({

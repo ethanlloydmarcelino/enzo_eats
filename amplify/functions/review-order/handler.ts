@@ -42,7 +42,9 @@ export const handler = async (
   if (!existing) fail('ORDER_NOT_FOUND')
 
   const now = new Date().toISOString()
-  const reviewing = event.info.fieldName === 'reviewOrder'
+  // Amplify function handlers receive arguments and identity, not necessarily
+  // the AppSync resolver's info object. These mutations have distinct inputs.
+  const reviewing = typeof approve === 'boolean'
   const toStatus = reviewing ? (approve ? 'APPROVED' : 'DENIED') : event.arguments.status!
   if (!reviewing && !['PREPARING', 'READY', 'COMPLETED'].includes(toStatus))
     fail('INVALID_TRANSITION')
