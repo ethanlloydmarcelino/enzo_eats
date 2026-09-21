@@ -30,6 +30,7 @@ import { useThemeStore } from '../store/useThemeStore'
 import { useColors } from '../theme'
 import { useTranslations } from '../translations'
 import { fonts } from '../fonts'
+import { showLocalNotification, allowSignupNotifications } from '../notifications/push'
 
 const emptyValues = {
   firstName: '',
@@ -138,6 +139,11 @@ const AccountForm = ({ colors, onClose }) => {
     try {
       await action()
     } catch (cause) {
+      if (step === 'signUp')
+        void showLocalNotification(
+          `Account creation could not be confirmed. ${t(authErrorKey(cause))}`,
+          'signup-failed',
+        )
       if (mounted.current) {
         if (cause.name === 'UserNotConfirmedException') go('confirm')
         else setError(authErrorKey(cause))
@@ -208,6 +214,10 @@ const AccountForm = ({ colors, onClose }) => {
           },
         })
         // Cognito accepted the account, so confirm the success explicitly rather
+        void showLocalNotification(
+          result.isSignUpComplete ? t('authAccountReady') : t('authAccountCreated'),
+          'signup-success',
+        )
         // than dropping the user on a code screen with no acknowledgement.
         if (result.nextStep.signUpStep === 'CONFIRM_SIGN_UP') {
           go('confirm', 'authAccountCreated')
@@ -297,6 +307,20 @@ const AccountForm = ({ colors, onClose }) => {
   return (
     <>
       <View style={styles.heading}>
+        {signupMode && (
+          <Pressable
+            accessibilityRole="button"
+            onPress={() =>
+              void allowSignupNotifications()
+                .then(() => setNotice('deviceNoticesAllowed'))
+                .catch((cause) => setError(cause.message))
+            }
+          >
+            <Text style={{ color: colors.primary, paddingVertical: 12 }}>
+              Allow signup notifications on this device
+            </Text>
+          </Pressable>
+        )}
         <Text accessibilityRole="header" style={[styles.title, { color: colors.foreground }]}>
           {t(title)}
         </Text>

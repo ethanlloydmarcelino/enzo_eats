@@ -1,8 +1,9 @@
-const chickenPoppersImage = require('../../assets/images/chicken-poppers.png')
-const chickenTocinoImage = require('../../assets/images/chicken-tocino.png')
-const cordonBlueImage = require('../../assets/images/cordon-blue.png')
-const shomaiRiceImage = require('../../assets/images/shomai-rice-v2.png')
-const fruitSodaImage = require('../../assets/images/fruit-soda.png')
+import { photoSource } from '../storage/photos'
+const chickenPoppersImage = 'site/chicken-poppers.png'
+const chickenTocinoImage = 'site/chicken-tocino.png'
+const cordonBlueImage = 'site/cordon-blue.png'
+const shomaiRiceImage = 'site/shomai-rice-v2.png'
+const fruitSodaImage = 'site/fruit-soda.png'
 
 const menu = [
   {
@@ -79,6 +80,10 @@ export const categories = ['all', 'food', 'drink']
 
 // Replace this function with an Amplify Data query later. The React Query consumer stays the same.
 export const fetchMenu = async () => {
-  await new Promise((resolve) => setTimeout(resolve, 220))
-  return menu
+  return Promise.all(
+    menu.map(async (item) => ({
+      ...item,
+      image: await photoSource(item.image).catch(() => undefined),
+    })),
+  )
 }

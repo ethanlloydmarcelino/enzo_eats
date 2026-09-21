@@ -1,8 +1,15 @@
 import * as auth from 'aws-amplify/auth'
 import { Hub } from 'aws-amplify/utils'
 import { createAuthStore } from '../auth/createAuthStore'
+import { disablePush } from '../notifications/push'
 
-export const useAuthStore = createAuthStore(auth)
+export const useAuthStore = createAuthStore({
+  ...auth,
+  signOut: async (...args) => {
+    await disablePush()
+    return auth.signOut(...args)
+  },
+})
 
 export const listenToAuth = () => {
   const stop = Hub.listen('auth', ({ payload }) => {

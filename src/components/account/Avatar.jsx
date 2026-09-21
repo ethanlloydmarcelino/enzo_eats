@@ -1,4 +1,6 @@
 import { useState } from 'react'
+import { useQuery } from '@tanstack/react-query'
+import { photoSource } from '../../storage/photos'
 import { Image, StyleSheet, Text, View } from 'react-native'
 import { fonts } from '../../fonts'
 import { useThemeStore } from '../../store/useThemeStore'
@@ -16,7 +18,15 @@ export const Avatar = ({ attributes, size = 64 }) => {
   const colors = useColors(useThemeStore((state) => state.theme))
   const [failed, setFailed] = useState(null)
   const pictureUrl = useOrderStore((state) => state.pictureUrl)
-  const picture = pictureUrl || attributes?.picture
+  const pictureKey = useOrderStore((state) => state.pictureKey)
+  const { data: source } = useQuery({
+    queryKey: ['profile-photo', pictureKey],
+    queryFn: () => photoSource(pictureKey),
+    enabled: !!pictureKey,
+    staleTime: 45 * 60 * 1000,
+    refetchInterval: 45 * 60 * 1000,
+  })
+  const picture = pictureKey ? source?.uri : pictureUrl
   const initials = initialsOf(attributes?.given_name, attributes?.family_name)
 
   if (picture && failed !== picture) {

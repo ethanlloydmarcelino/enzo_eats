@@ -19,7 +19,11 @@ import { MenuCard } from './MenuCard'
 import { useTranslations } from '../translations'
 
 export const MenuSection = ({ category, setCategory, search, setSearch, searchRef }) => {
-  const { data = [], isPending } = useQuery({ queryKey: ['menu'], queryFn: fetchMenu })
+  const { data = [], isPending } = useQuery({
+    queryKey: ['menu'],
+    queryFn: fetchMenu,
+    refetchInterval: 45 * 60 * 1000,
+  })
   const colors = useColors(useThemeStore((state) => state.theme))
   const { language, t } = useTranslations()
   const { width } = useWindowDimensions()

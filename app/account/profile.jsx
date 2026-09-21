@@ -8,8 +8,7 @@ import { useAuthStore } from '../../src/store/useAuthStore'
 import { useThemeStore } from '../../src/store/useThemeStore'
 import { useColors } from '../../src/theme'
 import { useTranslations } from '../../src/translations'
-import { useOrderStore } from '../../src/store/useOrderStore'
-import { saveAccountPreferences } from '../../src/orders/preferences'
+import { PhotoUpload } from '../../src/components/account/PhotoUpload'
 
 const Field = ({ label, hint, colors, ...props }) => (
   <View style={styles.field}>
@@ -41,21 +40,12 @@ const Profile = () => {
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
   const [notice, setNotice] = useState('')
-  const pictureUrl = useOrderStore((state) => state.pictureUrl)
-  const [picture, setPicture] = useState(null)
 
   const change = (key) => (value) => setValues((current) => ({ ...current, [key]: value }))
 
   const save = async () => {
     const profile = profileAttributes(values)
     const invalid = profileError(profile)
-    const photo = (picture ?? pictureUrl).trim()
-    try {
-      if (photo && (new URL(photo).protocol !== 'https:' || photo.length > 2048)) throw new Error()
-    } catch {
-      setError('profilePhotoInvalid')
-      return
-    }
     if (invalid) {
       setError(invalid)
       setNotice('')
@@ -66,10 +56,6 @@ const Profile = () => {
     setNotice('')
     try {
       await saveProfile(profile)
-      await saveAccountPreferences(useAuthStore.getState().user.userId, {
-        pictureUrl: photo || null,
-      })
-      useOrderStore.setState({ pictureUrl: photo })
       setNotice('authProfileSaved')
     } catch (cause) {
       setError(authErrorKey(cause))
@@ -87,16 +73,7 @@ const Profile = () => {
         </Text>
       </View>
 
-      <Field
-        colors={colors}
-        label={t('profilePhotoUrl')}
-        hint={t('profilePhotoUrlHint')}
-        value={picture ?? pictureUrl}
-        onChangeText={setPicture}
-        editable={!busy}
-        autoCapitalize="none"
-        keyboardType="url"
-      />
+      <PhotoUpload />
       <Field
         colors={colors}
         label={t('authFirstName')}

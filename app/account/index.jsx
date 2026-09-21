@@ -12,6 +12,7 @@ import {
 import { Pressable, StyleSheet, Text, View } from 'react-native'
 import { AccountScreen } from '../../src/components/account/AccountScreen'
 import { Avatar } from '../../src/components/account/Avatar'
+import { NotificationSettings } from '../../src/components/account/NotificationSettings'
 import { fonts } from '../../src/fonts'
 import { roleLabelKeys } from '../../src/auth/roles'
 import { useAuthStore } from '../../src/store/useAuthStore'
@@ -74,6 +75,7 @@ const AccountHome = () => {
 
   return (
     <AccountScreen title={t('account')}>
+      <NotificationSettings />
       <View style={[styles.identity, { backgroundColor: colors.muted }]}>
         <Avatar attributes={attributes} size={68} />
         <View style={styles.identityCopy}>

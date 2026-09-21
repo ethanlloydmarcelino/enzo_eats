@@ -17,7 +17,11 @@ const Favorites = () => {
   const setCartOpen = useOrderStore((state) => state.setCartOpen)
   const colors = useColors(useThemeStore((state) => state.theme))
   const { language, t } = useTranslations()
-  const { data: menu, isPending } = useQuery({ queryKey: ['menu'], queryFn: fetchMenu })
+  const { data: menu, isPending } = useQuery({
+    queryKey: ['menu'],
+    queryFn: fetchMenu,
+    refetchInterval: 45 * 60 * 1000,
+  })
 
   const items = (menu ?? []).filter((item) => favorites.includes(item.id))
 

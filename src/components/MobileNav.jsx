@@ -1,4 +1,5 @@
 import { router } from 'expo-router'
+import { NotificationDot } from './account/NotificationDot'
 import { Home, Search, ShoppingBag, Utensils, UserRound } from 'lucide-react-native'
 import { Pressable, StyleSheet, Text, View, useWindowDimensions } from 'react-native'
 import { useAuthStore } from '../store/useAuthStore'
@@ -37,7 +38,10 @@ export const MobileNav = ({ onHome, onMenu, onSearch }) => {
     <View style={[styles.nav, { backgroundColor: colors.card, borderTopColor: colors.border }]}>
       {items.map(({ label, Icon, action }, index) => (
         <Pressable key={label} onPress={action} style={styles.item}>
-          <Icon size={19} color={index === 0 ? colors.primary : colors.mutedForeground} />
+          <View style={{ width: 32, height: 24, alignItems: 'center' }}>
+            <Icon size={19} color={index === 0 ? colors.primary : colors.mutedForeground} />
+            {index === 4 && <NotificationDot />}
+          </View>
           <Text
             style={[styles.label, { color: index === 0 ? colors.primary : colors.mutedForeground }]}
           >

@@ -2,6 +2,7 @@ import { router } from 'expo-router'
 import { Search, ShoppingBag, UserRound } from 'lucide-react-native'
 import { Pressable, StyleSheet, Text, View, useWindowDimensions } from 'react-native'
 import { Logo } from './Logo'
+import { NotificationDot } from './account/NotificationDot'
 import { useOrderStore } from '../store/useOrderStore'
 import { ThemeToggle } from './ThemeToggle'
 import { LanguageToggle } from './LanguageToggle'
@@ -61,6 +62,7 @@ export const Header = ({ onMenu, onSearch }) => {
               style={styles.iconButton}
             >
               <UserRound size={19} color={colors.foreground} />
+              <NotificationDot />
             </Pressable>
           )}
           <ThemeToggle />

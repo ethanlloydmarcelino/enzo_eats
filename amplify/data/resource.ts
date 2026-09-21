@@ -1,6 +1,7 @@
 import { type ClientSchema, a, defineData } from '@aws-amplify/backend'
 import { placeOrder } from '../functions/place-order/resource'
 import { reviewOrder } from '../functions/review-order/resource'
+import { webPush } from '../functions/web-push/resource'
 
 /**
  * Order holds current state and its durable transition history. OrderEvent is
@@ -112,8 +113,16 @@ const schema = a
         owner: a.string().required(),
         favoriteIds: a.integer().array(),
         pictureUrl: a.url(),
+        pictureKey: a.string(),
       })
       .authorization((allow) => [allow.ownerDefinedIn('owner').identityClaim('sub')]),
+
+    manageWebPush: a
+      .mutation()
+      .arguments({ action: a.string().required(), subscription: a.json() })
+      .returns(a.json())
+      .authorization((allow) => [allow.authenticated()])
+      .handler(a.handler.function(webPush)),
 
     reviewOrder: a
       .mutation()

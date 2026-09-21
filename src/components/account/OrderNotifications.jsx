@@ -6,6 +6,7 @@ import { Pressable, Text, View } from 'react-native'
 import { useMyOrders, useOrdersAwaitingReview } from '../../orders/useOrders'
 import { useAuthStore } from '../../store/useAuthStore'
 import { useTranslations } from '../../translations'
+import { useNotificationStore } from '../../store/useNotificationStore'
 
 export const OrderNotifications = () => {
   const owner = useAuthStore((state) => state.user?.userId)
@@ -29,13 +30,19 @@ export const OrderNotifications = () => {
       active = false
     }
   }, [owner])
-  if (status !== 'signedIn' || seen.owner !== owner) return null
   const notices = [
     ...mine
-      .filter((order) => ['APPROVED', 'DENIED'].includes(order.status))
+      .filter((order) =>
+        ['APPROVED', 'DENIED', 'PREPARING', 'READY', 'COMPLETED'].includes(order.status),
+      )
       .map((order) => ({ order, admin: false })),
     ...pending.map((order) => ({ order, admin: true })),
   ].filter(({ order, admin }) => !seen.keys.includes(`${order.id}:${order.status}:${admin}`))
+  const ready = status === 'signedIn' && seen.owner === owner
+  useEffect(() => {
+    useNotificationStore.setState({ owner: owner ?? null, unread: ready ? notices.length : 0 })
+  }, [owner, ready, notices.length])
+  if (!ready) return null
   if (!notices.length) return null
   const notice = notices[0]
   const acknowledge = () => {
@@ -78,7 +85,11 @@ export const OrderNotifications = () => {
           router.push(notice.admin ? '/account/admin' : '/account/orders')
         }}
       >
-        <Text style={{ color: '#fff' }}>{t(key, { number: notice.order.orderNumber })}</Text>
+        <Text style={{ color: '#fff' }}>
+          {!notice.admin && ['PREPARING', 'READY', 'COMPLETED'].includes(notice.order.status)
+            ? `Order ${notice.order.orderNumber}: ${notice.order.status.toLowerCase()}`
+            : t(key, { number: notice.order.orderNumber })}
+        </Text>
       </Pressable>
       <Pressable
         accessibilityRole="button"

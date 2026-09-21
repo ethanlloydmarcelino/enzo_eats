@@ -5,6 +5,8 @@ import { useLanguageStore } from './store/useLanguageStore'
 
 const translations = {
   en: {
+    deviceNoticesAllowed:
+      'Device notifications are allowed. Your signup result will also appear here.',
     ...authTranslations.en,
     ...accountTranslations.en,
     ...checkoutTranslations.en,
@@ -90,6 +92,8 @@ const translations = {
     preparingPickup: 'Preparing your pickup experience…',
   },
   tl: {
+    deviceNoticesAllowed:
+      'Pinayagan ang mga notification. Makikita rin dito ang resulta ng pag-sign up.',
     ...authTranslations.tl,
     ...accountTranslations.tl,
     ...checkoutTranslations.tl,
