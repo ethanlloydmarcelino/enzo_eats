@@ -5,16 +5,9 @@ import { useThemeStore } from '../store/useThemeStore'
 import { useColors } from '../theme'
 import { useTranslations } from '../translations'
 
-import { useQuery } from '@tanstack/react-query'
-import { photoSource } from '../storage/photos'
+const heroImage = require('../../assets/images/filipino-rice-meals.png')
 
 export const Hero = ({ onOrder }) => {
-  const { data: heroImage } = useQuery({
-    queryKey: ['site-photo', 'hero'],
-    queryFn: () => photoSource('site/filipino-rice-meals.png'),
-    staleTime: 45 * 60 * 1000,
-    refetchInterval: 45 * 60 * 1000,
-  })
   const colors = useColors(useThemeStore((state) => state.theme))
   const { t } = useTranslations()
   const { width } = useWindowDimensions()

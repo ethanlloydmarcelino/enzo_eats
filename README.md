@@ -45,7 +45,7 @@ Amplify manages the session tokens. Passwords and verification codes stay in the
 
 ### Accounts, checkout, and approvals
 
-Signup acknowledges successful account creation only after Cognito accepts the request, then asks for email verification. Signup failures stay visible in the form; device alerts are also displayed when permission was granted using the signup notification button. The account icon opens `/account`, with names, a profile picture or initials, favorites, current and past orders, profile management, promotions, and help. Private `AccountPreferences` records save favorites and the S3 profile-picture key through AppSync; account names, email, phone, and optional address remain in Cognito. Green PWA icons and Apple home-screen metadata are in `public/`.
+Signup acknowledges successful account creation only after Cognito accepts the request, then asks for email verification. Signup failures stay visible in the form; device alerts are also displayed when permission was granted using the signup notification button. The account icon opens `/account`, with names, initials, favorites, current and past orders, profile management, promotions, and help. Private `AccountPreferences` records save favorites through AppSync; account names, email, phone, and optional address remain in Cognito. Green PWA icons and Apple home-screen metadata are in `public/`.
 
 Cash and GCash are the only checkout options. Orders are submitted through the `placeOrder` GraphQL mutation. GCash payments go to **0916-408-2529**, and customers must supply their receipt reference before submitting. Both methods wait for an admin or super admin to approve or deny them. PayPal has been removed from the app; the server continues rejecting it even if an older client tries to submit it.
 
@@ -55,17 +55,17 @@ Only backend functions can write orders. Customers can read their own orders; ad
 
 Order mutations drive AppSync subscriptions for in-app customer notifications and the admin queue. Queries paginate and refresh periodically to recover missed connections. Dismissed notices are stored per account on the device, and unread notices show a red dot on the account icon. Order history is saved atomically with state changes; `OrderEvent` is a secondary event feed whose write failures are logged.
 
-### Device notifications and S3 photos
+### Device notifications and bundled images
 
 Account → Device notifications enables standard Web Push. On iPhone/iPad, install the web app on the Home Screen first (iOS/iPadOS 16.4+). HTTPS, browser support, and explicit permission are required. Notifications are best effort and subject to device settings; in-app notices remain available. Native Expo push tokens are not implemented.
 
 The Order DynamoDB stream invokes the web-push Lambda after a saved status change. Pending orders notify current Cognito admins; status changes notify the customer. Subscriptions are private, tied to the authenticated Cognito sub, limited to ten devices, and expire after 90 days (enable again to renew). Expired browser endpoints are removed. Sign-out revokes the browser subscription. VAPID keys are initialized in Secrets Manager, never shipped to clients; only the public key is returned. The function runs with concurrency one to serialize key initialization. Failed stream deliveries retry three times and go to the FailedPushEvents SQS queue for inspection. Tags collapse retries on devices, but exactly-once push delivery is not guaranteed. No email/SMS integration is included.
 
-Profile → Upload profile photo accepts JPG/PNG/WebP up to 5 MB on web, resizes to 1024 pixels, and strips metadata by re-encoding. Amplify Storage restricts each profile directory to its Cognito identity. The account stores the object key; temporary download URLs refresh automatically. Removing a photo restores initials. Legacy URL pictures remain readable until replaced.
+Profile avatars use initials. Photo uploads and the application storage bucket have been removed.
 
-Menu and hero photos load from the storage bucket's `site/` prefix, readable by guests and signed-in users; client uploads to that prefix are prohibited. Deploy the backend, then run `node scripts/upload-site-photos.mjs` with operator AWS credentials to upload and verify existing source photos. Source assets remain as migration inputs, but menu/hero code no longer bundles them. App icons stay local. Refresh the Hosting configuration environment variable after deployment, then rebuild hosting. Run `npx tsx --test tests/push.test.ts` for push endpoint validation checks.
+Menu and hero photos are bundled from assets/images and are available to guests and signed-in users without storage permissions. App icons stay local.
 
-After deployment, refresh the Hosting environment variable using `scripts/set-hosting-outputs.mjs` so hosting sees the current models and storage configuration. Run `npm run test:checkout` for pricing, GCash, PayPal-disabled, and lifecycle checks. Verify the full signup and ordering flow using customer and admin test accounts before accepting real orders.
+After deployment, refresh the Hosting environment variable using `scripts/set-hosting-outputs.mjs` so hosting sees the current models and notification configuration. Run `npm run test:checkout` for pricing, GCash, PayPal-disabled, and lifecycle checks. Verify the full signup and ordering flow using customer and admin test accounts before accepting real orders.
 
 ### Sandbox output errors.
 
@@ -99,3 +99,5 @@ References: [Amplify Auth setup](https://docs.amplify.aws/react-native/build-a-b
 ## Code standards.
 
 Components use arrow functions and React Native `StyleSheet` styles. Run `npm run format` before committing and `npm run format:check` in CI.
+
+Device notifications use an Account toggle. Each app load offers consent when notifications are off; browser permission is requested only after tapping Enable. Existing consent is reused after sign-in to register order alerts.

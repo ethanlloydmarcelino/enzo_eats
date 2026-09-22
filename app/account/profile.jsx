@@ -8,7 +8,6 @@ import { useAuthStore } from '../../src/store/useAuthStore'
 import { useThemeStore } from '../../src/store/useThemeStore'
 import { useColors } from '../../src/theme'
 import { useTranslations } from '../../src/translations'
-import { PhotoUpload } from '../../src/components/account/PhotoUpload'
 
 const Field = ({ label, hint, colors, ...props }) => (
   <View style={styles.field}>
@@ -73,7 +72,6 @@ const Profile = () => {
         </Text>
       </View>
 
-      <PhotoUpload />
       <Field
         colors={colors}
         label={t('authFirstName')}

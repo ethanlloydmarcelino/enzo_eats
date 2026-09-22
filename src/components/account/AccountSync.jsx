@@ -5,7 +5,6 @@ import { dataClient, throwOnErrors } from '../../orders/client'
 import { useAuthStore } from '../../store/useAuthStore'
 import { useOrderStore } from '../../store/useOrderStore'
 import { useTranslations } from '../../translations'
-import { reconcilePushOwner } from '../../notifications/push'
 
 export const AccountSync = () => {
   const owner = useAuthStore((state) => state.user?.userId)
@@ -17,12 +16,9 @@ export const AccountSync = () => {
   useEffect(() => {
     let active = true
     if (status === 'loading') return undefined
-    void reconcilePushOwner(owner).catch(() => {})
     if (!owner) cache.removeQueries({ queryKey: ['orders'] })
     useOrderStore.setState({
       favorites: [],
-      pictureUrl: '',
-      pictureKey: '',
       preferencesOwner: owner ?? null,
       preferencesReady: false,
       preferencesError: false,
@@ -35,8 +31,6 @@ export const AccountSync = () => {
           if (active)
             useOrderStore.setState({
               favorites: data?.favoriteIds ?? [],
-              pictureUrl: data?.pictureUrl ?? '',
-              pictureKey: data?.pictureKey ?? '',
               preferencesReady: true,
             })
         })

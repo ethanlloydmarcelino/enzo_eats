@@ -15,6 +15,8 @@ import { useAppFonts } from '../src/fonts'
 import { AccountSync } from '../src/components/account/AccountSync'
 import { OrderNotifications } from '../src/components/account/OrderNotifications'
 
+import { NotificationPrompt } from '../src/components/account/NotificationPrompt'
+
 const queryClient = new QueryClient()
 
 const RootLayout = () => {
@@ -61,6 +63,7 @@ const RootLayout = () => {
         <AuthModal />
         <AccountSync />
         <OrderNotifications />
+        {!showLaunch && <NotificationPrompt />}
         {showLaunch && <LaunchScreen ready={appReady} onFinished={finishLaunch} />}
       </QueryClientProvider>
     </SafeAreaProvider>

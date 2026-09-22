@@ -112,8 +112,6 @@ const schema = a
       .model({
         owner: a.string().required(),
         favoriteIds: a.integer().array(),
-        pictureUrl: a.url(),
-        pictureKey: a.string(),
       })
       .authorization((allow) => [allow.ownerDefinedIn('owner').identityClaim('sub')]),
 

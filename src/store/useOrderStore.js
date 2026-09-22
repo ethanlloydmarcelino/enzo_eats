@@ -6,8 +6,6 @@ export const useOrderStore = create((set, get) => ({
   cartOpen: false,
   cart: [],
   favorites: [],
-  pictureUrl: '',
-  pictureKey: '',
   preferencesOwner: null,
   preferencesReady: false,
   preferencesError: false,

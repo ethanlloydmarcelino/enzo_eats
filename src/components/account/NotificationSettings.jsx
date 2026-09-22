@@ -1,43 +1,33 @@
-import { useState } from 'react'
-import { Pressable, Text, View } from 'react-native'
-import { enablePush, disablePush } from '../../notifications/push'
-
+import { Switch, Text, View } from 'react-native'
+import { useNotificationSettings } from '../../notifications/settings'
+import { useAuthStore } from '../../store/useAuthStore'
 export const NotificationSettings = () => {
-  const [message, setMessage] = useState(
-    'Get order alerts on this device, even when Enzo Eats is closed. On iPhone, add this app to your Home Screen first.',
-  )
-  const [busy, setBusy] = useState(false)
-  const change = async (enabled) => {
-    setBusy(true)
-    try {
-      await (enabled ? enablePush() : disablePush())
-      setMessage(
-        enabled
-          ? 'Notifications are enabled on this device.'
-          : 'Notifications are off on this device.',
-      )
-    } catch (error) {
-      setMessage(error.message)
-    } finally {
-      setBusy(false)
-    }
-  }
+  const { enabled, busy, ready, message, change } = useNotificationSettings()
+  const owner = useAuthStore((state) => state.user?.userId)
   return (
     <View
-      style={{ padding: 16, gap: 12, backgroundColor: '#eef7ef', borderRadius: 12, marginTop: 20 }}
+      style={{
+        padding: 16,
+        gap: 12,
+        backgroundColor: '#eef7ef',
+        borderRadius: 12,
+        marginVertical: 12,
+      }}
     >
-      <Text style={{ color: '#163d2b', fontWeight: 'bold' }}>Device notifications</Text>
+      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+        <Text style={{ color: '#163d2b', fontWeight: 'bold' }}>Device notifications</Text>
+        <Switch
+          accessibilityLabel="Enable device notifications"
+          value={enabled}
+          disabled={busy || !ready}
+          onValueChange={(value) => void change(value, owner)}
+          trackColor={{ true: '#17643a', false: '#777' }}
+        />
+      </View>
       <Text accessibilityLiveRegion="polite" style={{ color: '#163d2b' }}>
-        {message}
+        {message ||
+          'Get order alerts even when Enzo Eats is closed. On iPhone, open the app from your Home Screen.'}
       </Text>
-      <Pressable accessibilityRole="button" disabled={busy} onPress={() => void change(true)}>
-        <Text style={{ color: '#17643a', fontWeight: 'bold' }}>
-          {busy ? 'Please wait…' : 'Enable notifications'}
-        </Text>
-      </Pressable>
-      <Pressable accessibilityRole="button" disabled={busy} onPress={() => void change(false)}>
-        <Text style={{ color: '#555' }}>Turn off on this device</Text>
-      </Pressable>
     </View>
   )
 }

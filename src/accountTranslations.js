@@ -14,7 +14,7 @@ export const accountTranslations = {
     accountPromotions: 'Promotions',
     accountPromotionsHint: 'Current offers and perks',
     accountManageProfile: 'Manage profile',
-    accountManageProfileHint: 'Name, photo, phone, and address',
+    accountManageProfileHint: 'Name, phone, and address',
     accountHelp: 'Help',
     accountHelpHint: 'Answers and ways to reach us',
 
@@ -122,7 +122,7 @@ export const accountTranslations = {
     accountPromotions: 'Mga promo',
     accountPromotionsHint: 'Mga kasalukuyang alok',
     accountManageProfile: 'Pamahalaan ang profile',
-    accountManageProfileHint: 'Pangalan, larawan, telepono, at address',
+    accountManageProfileHint: 'Pangalan, telepono, at address',
     accountHelp: 'Tulong',
     accountHelpHint: 'Mga sagot at paraan para makausap kami',
 

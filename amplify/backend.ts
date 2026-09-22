@@ -10,7 +10,6 @@ import { Secret } from 'aws-cdk-lib/aws-secretsmanager'
 import { CfnFunction, EventSourceMapping, StartingPosition } from 'aws-cdk-lib/aws-lambda'
 import { Queue } from 'aws-cdk-lib/aws-sqs'
 import { SqsDlq } from 'aws-cdk-lib/aws-lambda-event-sources'
-import { storage } from './storage/resource'
 import { webPush } from './functions/web-push/resource'
 
 const backend = defineBackend({
@@ -18,7 +17,6 @@ const backend = defineBackend({
   data,
   placeOrder,
   reviewOrder,
-  storage,
   webPush,
 })
 

@@ -2,7 +2,13 @@
 export const validateSubscription = (input: unknown) => {
   const value = typeof input === 'string' ? JSON.parse(input) : input
   const url = new URL(value?.endpoint)
-  const allowed = ['fcm.googleapis.com', 'updates.push.services.mozilla.com', 'web.push.apple.com']
+  const allowed = [
+    'fcm.googleapis.com',
+    'updates.push.services.mozilla.com',
+    // Apple documents *.push.apple.com for Safari and Home Screen web apps.
+    'push.apple.com',
+    'notify.windows.com',
+  ]
   if (
     url.protocol !== 'https:' ||
     url.port ||

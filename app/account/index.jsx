@@ -75,7 +75,6 @@ const AccountHome = () => {
 
   return (
     <AccountScreen title={t('account')}>
-      <NotificationSettings />
       <View style={[styles.identity, { backgroundColor: colors.muted }]}>
         <Avatar attributes={attributes} size={68} />
         <View style={styles.identityCopy}>
@@ -147,6 +146,7 @@ const AccountHome = () => {
       <Text style={[styles.sectionLabel, { color: colors.mutedForeground }]}>
         {t('accountSettingsSection')}
       </Text>
+      <NotificationSettings />
       <View style={[styles.group, { backgroundColor: colors.card, borderColor: colors.border }]}>
         <Row
           Icon={UserCog}
