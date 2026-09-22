@@ -1,5 +1,5 @@
 import { useEffect } from 'react'
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useMutation, useQuery, useQueryClient, useInfiniteQuery } from '@tanstack/react-query'
 import { cartToLines, dataClient, throwOnErrors, listAll } from './client'
 import { useAuthStore } from '../store/useAuthStore'
 
@@ -125,4 +125,33 @@ export const useReviewOrder = () => {
           ),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['orders'] }),
   })
+}
+
+/** Completed order snapshots, paginated for the accounting archive. */
+export const useCompletedOrders = () => {
+  const { user, role, status } = useAuthStore()
+  const queryClient = useQueryClient()
+  const enabled = status === 'signedIn' && ADMIN_ROLES.includes(role)
+  const query = useInfiniteQuery({
+    queryKey: ['orders', 'receipts', user?.userId, role],
+    enabled,
+    initialPageParam: undefined,
+    getNextPageParam: (page) => page.nextToken || undefined,
+    refetchInterval: 30000,
+    queryFn: async ({ pageParam }) => {
+      const page = await dataClient.models.Order.ordersByStatus(
+        { status: 'COMPLETED' },
+        { nextToken: pageParam, limit: 25, sortDirection: 'DESC' },
+      )
+      throwOnErrors(page)
+      return page
+    },
+  })
+  useEffect(() => {
+    if (!enabled) return undefined
+    return subscribeToOrders(() =>
+      queryClient.invalidateQueries({ queryKey: ['orders', 'receipts'] }),
+    )
+  }, [enabled, queryClient, user?.userId, role])
+  return query
 }

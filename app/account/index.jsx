@@ -2,6 +2,7 @@ import { router } from 'expo-router'
 import {
   ChevronRight,
   ClipboardList,
+  ReceiptText,
   Heart,
   HelpCircle,
   LogOut,
@@ -111,6 +112,13 @@ const AccountHome = () => {
               hint={t('adminApprovalsHint')}
               badge={reviewCount}
               onPress={() => router.push('/account/admin')}
+            />
+            <Row
+              Icon={ReceiptText}
+              colors={colors}
+              label="Completed orders & receipts"
+              hint="Itemized records, printing and PDF copies"
+              onPress={() => router.push('/account/receipts')}
             />
           </View>
         </>

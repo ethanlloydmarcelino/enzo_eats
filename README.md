@@ -101,3 +101,21 @@ References: [Amplify Auth setup](https://docs.amplify.aws/react-native/build-a-b
 Components use arrow functions and React Native `StyleSheet` styles. Run `npm run format` before committing and `npm run format:check` in CI.
 
 Device notifications use an Account toggle. Each app load offers consent when notifications are off; browser permission is requested only after tapping Enable. Existing consent is reused after sign-in to register order alerts.
+
+### Completed-order receipts
+
+Admins and super admins can open **Account > Completed orders & receipts**. Orders appear automatically after an admin marks them **Completed**. Pending, denied, and cancelled orders are excluded. The archive uses the existing protected Order records and status index; no backend schema change or additional storage is needed.
+
+The archive loads 25 orders at a time, newest order placed first. Use **Load more completed orders** for older records or **Refresh orders** to retry a failed request. Live updates and periodic refreshes pick up newly completed orders.
+
+Each receipt includes the order number and ID, customer details saved at checkout, item names/options, quantities, saved unit prices, line totals, subtotal and total, payment method/reference and verification, and customer/admin notes. Order and completion timestamps use Philippine time. Completion time comes from the durable order history; missing legacy timestamps display **Not recorded**. Later menu-price or profile changes do not rewrite the saved receipt details.
+
+To print or save a receipt:
+
+1. Open **View itemized receipt** to review the order.
+2. Select **Print receipt / Save PDF**. Allow pop-ups for Enzo Eats if the browser blocks the receipt window.
+3. Choose a printer or **Save as PDF** in the browser print dialog. PDF options depend on the browser/device.
+
+Printing is available in the web app. Receipts are generated on demand as accounting copies; PDF files are not uploaded or stored publicly.
+
+Validation: run `node --test tests/receipts.test.mjs` for snapshot rendering, HTML escaping, completion timestamps, and completed-only receipts. Run `npm run lint` and `npx expo export --platform web` before publishing. This feature requires a frontend Hosting rebuild; it uses the already deployed sandbox backend.
