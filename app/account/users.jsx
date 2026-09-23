@@ -13,7 +13,7 @@ const decode = (result) => {
 }
 export default function Users() {
   const { role, status, user: actor } = useAuthStore()
-  const allowed = status === 'signedIn' && ['admin', 'super_admin'].includes(role)
+  const allowed = status === 'signedIn' && role === 'super_admin'
   const colors = useColors(useThemeStore((s) => s.theme))
   const cache = useQueryClient()
   const [search, setSearch] = useState('')
@@ -64,8 +64,7 @@ export default function Users() {
       {allowed && (
         <>
           <Text style={text}>
-            Admins can manage User and Admin roles. Only super admins can change Super Admin
-            membership. Your own role cannot be changed here.
+            Only super admins can view users or change roles. Your own role cannot be changed here.
           </Text>
           <TextInput
             accessibilityLabel="Search email prefix"

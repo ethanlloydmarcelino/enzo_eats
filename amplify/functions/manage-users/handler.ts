@@ -37,7 +37,7 @@ export const handler = async (
   if (!actor) throw new Error('NOT_AUTHORIZED')
   // Re-check current membership: an old access token cannot administer users after demotion.
   const actorGroups = await groupsFor(actor)
-  if (!['admin', 'super_admin'].includes(roleOf(actorGroups))) throw new Error('NOT_AUTHORIZED')
+  if (roleOf(actorGroups) !== 'super_admin') throw new Error('NOT_AUTHORIZED')
   const args = event.arguments
   if (args.username !== undefined) {
     if (!args.username || args.username.length > 128) throw new Error('INVALID_USER')

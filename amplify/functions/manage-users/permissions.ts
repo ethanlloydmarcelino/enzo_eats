@@ -9,7 +9,7 @@ export const assertRoleChange = (
   next: string,
 ) => {
   const role = roleOf(actorGroups)
-  if (!['admin', 'super_admin'].includes(role)) throw new Error('NOT_AUTHORIZED')
+  if (role !== 'super_admin') throw new Error('NOT_AUTHORIZED')
   if (!managedRoles.includes(next as (typeof managedRoles)[number])) throw new Error('INVALID_ROLE')
   if (actor === target) throw new Error('SELF_ROLE_CHANGE')
   if (role !== 'super_admin' && (next === 'super_admin' || targetGroups.includes('super_admin')))

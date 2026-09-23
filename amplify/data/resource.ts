@@ -142,13 +142,13 @@ const schema = a
       .query()
       .arguments({ nextToken: a.string(), emailPrefix: a.string() })
       .returns(a.json())
-      .authorization((allow) => [allow.groups(['admin', 'super_admin'])])
+      .authorization((allow) => [allow.groups(['super_admin'])])
       .handler(a.handler.function(manageUsers)),
     changeUserRole: a
       .mutation()
       .arguments({ username: a.string().required(), role: a.string().required() })
       .returns(a.json())
-      .authorization((allow) => [allow.groups(['admin', 'super_admin'])])
+      .authorization((allow) => [allow.groups(['super_admin'])])
       .handler(a.handler.function(manageUsers)),
 
     flagOrder: a

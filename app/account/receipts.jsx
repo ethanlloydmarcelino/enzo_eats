@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { router } from 'expo-router'
+import { Flag } from 'lucide-react-native'
 import { ActivityIndicator, Pressable, ScrollView, Text, TextInput, View } from 'react-native'
 import { AccountScreen } from '../../src/components/account/AccountScreen'
 import { AdminOrderAction } from '../../src/components/account/AdminOrderAction'
@@ -11,6 +12,73 @@ import { useAuthStore } from '../../src/store/useAuthStore'
 import { useThemeStore } from '../../src/store/useThemeStore'
 import { useColors } from '../../src/theme'
 const emptyFilters = { term: '', from: '', to: '', payment: '', flagged: '' }
+
+const OrderNumberCell = ({ order, colors }) => {
+  const [hovered, setHovered] = useState(false)
+  const [focused, setFocused] = useState(false)
+  const [pinned, setPinned] = useState(false)
+  const expanded = hovered || focused || pinned
+  const reason = order.flagReason || 'No reason recorded.'
+  return (
+    <View role="cell" style={{ width: 180, padding: 12, gap: 8 }}>
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+        <Text selectable style={{ color: colors.foreground, lineHeight: 22, flexShrink: 1 }}>
+          {order.orderNumber}
+        </Text>
+        {!!order.flaggedAt && (
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={'Flagged order ' + order.orderNumber + ': ' + reason}
+            accessibilityHint="Show the reason this order was flagged"
+            accessibilityState={{ expanded }}
+            onHoverIn={() => setHovered(true)}
+            onHoverOut={() => setHovered(false)}
+            onFocus={() => setFocused(true)}
+            onBlur={() => setFocused(false)}
+            onPress={() => {
+              setFocused(false)
+              setPinned((value) => !value)
+            }}
+            style={{
+              minWidth: 44,
+              minHeight: 44,
+              alignItems: 'center',
+              justifyContent: 'center',
+              borderRadius: 8,
+              backgroundColor: expanded ? '#fff1f0' : 'transparent',
+            }}
+          >
+            <Flag
+              size={17}
+              color="#b42318"
+              fill="#b42318"
+              accessibilityElementsHidden
+              importantForAccessibility="no-hide-descendants"
+            />
+          </Pressable>
+        )}
+      </View>
+      {!!order.flaggedAt && expanded && (
+        <View
+          style={{
+            padding: 10,
+            borderRadius: 8,
+            backgroundColor: '#fff1f0',
+            borderLeftWidth: 3,
+            borderLeftColor: '#b42318',
+          }}
+        >
+          <Text style={{ color: '#912018', fontSize: 12, fontWeight: 'bold', marginBottom: 4 }}>
+            Flagged for review
+          </Text>
+          <Text selectable style={{ color: '#912018', fontSize: 12, lineHeight: 18 }}>
+            {reason}
+          </Text>
+        </View>
+      )}
+    </View>
+  )
+}
 
 const Receipts = () => {
   const { role, status } = useAuthStore()
@@ -172,7 +240,6 @@ const Receipts = () => {
                   ['Completed', 210],
                   ['Payment', 110],
                   ['Total', 120],
-                  ['Flag', 110],
                   ['Actions', 200],
                 ].map(([label, width]) => (
                   <View key={label} role="columnheader" style={{ width, padding: 12 }}>
@@ -191,7 +258,7 @@ const Receipts = () => {
                     backgroundColor: row.id === selected ? colors.muted : colors.card,
                   }}
                 >
-                  {cell(row.orderNumber, 180)}
+                  <OrderNumberCell order={row} colors={colors} />
                   {cell(
                     row.customerFirstName + ' ' + row.customerLastName + '\n' + row.customerEmail,
                     240,
@@ -200,7 +267,6 @@ const Receipts = () => {
                   {cell(receiptDate(completedAt(row)), 210)}
                   {cell(row.paymentMethod, 110)}
                   {cell(receiptMoney(row.total, row.currency), 120)}
-                  {cell(row.flaggedAt ? 'Flagged' : '-', 110)}
                   <View role="cell" style={{ width: 200, padding: 8, gap: 8 }}>
                     <Pressable
                       accessibilityRole="button"

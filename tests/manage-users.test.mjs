@@ -11,8 +11,8 @@ const permissions = { exports: {} }
 vm.runInNewContext(compile('amplify/functions/manage-users/permissions.ts'), permissions)
 const { assertRoleChange } = permissions.exports
 test('role boundaries prevent self changes and admin access to super admin membership', () => {
-  assert.doesNotThrow(() => assertRoleChange('a', 'b', ['admin'], ['user'], 'admin'))
-  assert.doesNotThrow(() => assertRoleChange('a', 'b', ['admin'], ['admin'], 'user'))
+  assert.throws(() => assertRoleChange('a', 'b', ['admin'], ['user'], 'admin'), /NOT_AUTHORIZED/)
+  assert.throws(() => assertRoleChange('a', 'b', ['admin'], ['admin'], 'user'), /NOT_AUTHORIZED/)
   assert.doesNotThrow(() => assertRoleChange('a', 'b', ['super_admin'], ['user'], 'super_admin'))
   for (const args of [
     ['a', 'b', ['user'], ['user'], 'admin'],
@@ -23,7 +23,7 @@ test('role boundaries prevent self changes and admin access to super admin membe
   ])
     assert.throws(() => assertRoleChange(...args))
 })
-function setup(actorGroups = ['admin']) {
+function setup(actorGroups = ['super_admin']) {
   const calls = []
   const members = { actor: [...actorGroups], target: ['user', 'custom-group'] }
   const SDK = {}
@@ -106,4 +106,22 @@ test('a demoted caller cannot list users even with an old session', async () => 
     calls.some((x) => x.kind === 'ListUsersCommand'),
     false,
   )
+})
+
+test('admins and users cannot list accounts or change roles directly', async () => {
+  for (const role of ['admin', 'user']) {
+    const { run, calls } = setup([role])
+    await assert.rejects(run({}), /NOT_AUTHORIZED/)
+    await assert.rejects(run({ username: 'target', role: 'admin' }), /NOT_AUTHORIZED/)
+    assert.equal(
+      calls.some((call) =>
+        [
+          'ListUsersCommand',
+          'AdminAddUserToGroupCommand',
+          'AdminRemoveUserFromGroupCommand',
+        ].includes(call.kind),
+      ),
+      false,
+    )
+  }
 })
