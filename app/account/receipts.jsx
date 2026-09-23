@@ -48,13 +48,7 @@ const OrderNumberCell = ({ order, colors }) => {
               backgroundColor: expanded ? '#fff1f0' : 'transparent',
             }}
           >
-            <Flag
-              size={17}
-              color="#b42318"
-              fill="#b42318"
-              accessibilityElementsHidden
-              importantForAccessibility="no-hide-descendants"
-            />
+            <Flag size={17} color="#b42318" fill="#b42318" aria-hidden={true} focusable={false} />
           </Pressable>
         )}
       </View>
