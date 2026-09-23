@@ -1,7 +1,9 @@
 import { useEffect } from 'react'
-import { useMutation, useQuery, useQueryClient, useInfiniteQuery } from '@tanstack/react-query'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { cartToLines, dataClient, throwOnErrors, listAll } from './client'
 import { useAuthStore } from '../store/useAuthStore'
+
+import { receiptSearch } from './receiptSearch.mjs'
 
 const ADMIN_ROLES = ['admin', 'super_admin']
 
@@ -113,36 +115,41 @@ export const usePlaceOrder = () => {
 export const useReviewOrder = () => {
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: async ({ orderId, approve, decisionNote, status }) =>
-      status
-        ? throwOnErrors(await dataClient.mutations.advanceOrder({ orderId, status }))
-        : throwOnErrors(
-            await dataClient.mutations.reviewOrder({
-              orderId,
-              approve,
-              decisionNote: decisionNote || null,
-            }),
-          ),
+    mutationFn: async ({ orderId, approve, decisionNote, status, flagReason }) =>
+      flagReason !== undefined
+        ? throwOnErrors(await dataClient.mutations.flagOrder({ orderId, flagReason }))
+        : status
+          ? throwOnErrors(
+              await dataClient.mutations.advanceOrder({ orderId, status, decisionNote }),
+            )
+          : throwOnErrors(
+              await dataClient.mutations.reviewOrder({
+                orderId,
+                approve,
+                decisionNote: decisionNote || null,
+              }),
+            ),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['orders'] }),
   })
 }
 
 /** Completed order snapshots, paginated for the accounting archive. */
-export const useCompletedOrders = () => {
+export const useCompletedOrders = (criteria = {}, pageToken) => {
   const { user, role, status } = useAuthStore()
   const queryClient = useQueryClient()
   const enabled = status === 'signedIn' && ADMIN_ROLES.includes(role)
-  const query = useInfiniteQuery({
-    queryKey: ['orders', 'receipts', user?.userId, role],
+  const query = useQuery({
+    queryKey: ['orders', 'receipts', user?.userId, role, criteria, pageToken],
     enabled,
-    initialPageParam: undefined,
-    getNextPageParam: (page) => page.nextToken || undefined,
     refetchInterval: 30000,
-    queryFn: async ({ pageParam }) => {
-      const page = await dataClient.models.Order.ordersByStatus(
-        { status: 'COMPLETED' },
-        { nextToken: pageParam, limit: 25, sortDirection: 'DESC' },
-      )
+    queryFn: async () => {
+      const search = receiptSearch(criteria)
+      const page = await dataClient.models.Order.ordersByStatus(search.key, {
+        nextToken: pageToken,
+        limit: 25,
+        sortDirection: 'DESC',
+        filter: search.filter,
+      })
       throwOnErrors(page)
       return page
     },

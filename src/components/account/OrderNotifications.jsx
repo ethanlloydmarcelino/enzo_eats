@@ -33,7 +33,9 @@ export const OrderNotifications = () => {
   const notices = [
     ...mine
       .filter((order) =>
-        ['APPROVED', 'DENIED', 'PREPARING', 'READY', 'COMPLETED'].includes(order.status),
+        ['APPROVED', 'DENIED', 'PREPARING', 'READY', 'COMPLETED', 'CANCELLED'].includes(
+          order.status,
+        ),
       )
       .map((order) => ({ order, admin: false })),
     ...pending.map((order) => ({ order, admin: true })),
@@ -54,9 +56,11 @@ export const OrderNotifications = () => {
   }
   const key = notice.admin
     ? 'noticeWaiting'
-    : notice.order.status === 'DENIED'
-      ? 'noticeDenied'
-      : 'noticeApproved'
+    : notice.order.status === 'CANCELLED'
+      ? 'noticeCancelled'
+      : notice.order.status === 'DENIED'
+        ? 'noticeDenied'
+        : 'noticeApproved'
   return (
     <View
       accessibilityLiveRegion="polite"

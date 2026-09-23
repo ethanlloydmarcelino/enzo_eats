@@ -12,6 +12,8 @@ import { useTranslations } from '../../src/translations'
 import { orderErrorKey } from '../../src/orders/client'
 import { useOrdersAwaitingReview, useReviewOrder } from '../../src/orders/useOrders'
 
+import { AdminOrderAction } from '../../src/components/account/AdminOrderAction'
+
 const ADMIN_ROLES = ['admin', 'super_admin']
 
 const Admin = () => {
@@ -159,6 +161,7 @@ const Admin = () => {
                       </Pressable>
                     </View>
                   </View>
+                  <AdminOrderAction order={order} />
                 </OrderCard>
               ))}
             </View>
@@ -186,6 +189,7 @@ const Admin = () => {
                 >
                   <Text style={[styles.buttonText, { color: '#fff' }]}>{t(`advance${next}`)}</Text>
                 </Pressable>
+                <AdminOrderAction order={order} />
               </OrderCard>
             )
           })}

@@ -120,6 +120,13 @@ const AccountHome = () => {
               hint="Itemized records, printing and PDF copies"
               onPress={() => router.push('/account/receipts')}
             />
+            <Row
+              Icon={UserCog}
+              colors={colors}
+              label="Users & roles"
+              hint="View users and manage account roles"
+              onPress={() => router.push('/account/users')}
+            />
           </View>
         </>
       )}

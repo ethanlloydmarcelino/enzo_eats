@@ -106,16 +106,28 @@ Device notifications use an Account toggle. Each app load offers consent when no
 
 Admins and super admins can open **Account > Completed orders & receipts**. Orders appear automatically after an admin marks them **Completed**. Pending, denied, and cancelled orders are excluded. The archive uses the existing protected Order records and status index; no backend schema change or additional storage is needed.
 
-The archive loads 25 orders at a time, newest order placed first. Use **Load more completed orders** for older records or **Refresh orders** to retry a failed request. Live updates and periodic refreshes pick up newly completed orders.
+The archive is a horizontally scrollable table with bounded pages (up to 25 evaluated orders per request), newest order placed first. Use Previous/Next to browse and Refresh to retry. Search order number, customer name/email or payment reference (case-sensitive), filter by order-date range in Philippine time, payment method, or flagged status. The date range is applied to the existing status/date index; other filters run server-side. Filtered pages can be short or empty and still have a continuation token. Use a narrow date range for large archives. This is indexed date browsing with paginated text filtering, not a full-text search engine. Live updates and periodic refreshes pick up newly completed orders.
 
 Each receipt includes the order number and ID, customer details saved at checkout, item names/options, quantities, saved unit prices, line totals, subtotal and total, payment method/reference and verification, and customer/admin notes. Order and completion timestamps use Philippine time. Completion time comes from the durable order history; missing legacy timestamps display **Not recorded**. Later menu-price or profile changes do not rewrite the saved receipt details.
 
 To print or save a receipt:
 
-1. Open **View itemized receipt** to review the order.
+1. Select **View / flag** in the receipt table to review the itemized order.
 2. Select **Print receipt / Save PDF**. Allow pop-ups for Enzo Eats if the browser blocks the receipt window.
 3. Choose a printer or **Save as PDF** in the browser print dialog. PDF options depend on the browser/device.
 
 Printing is available in the web app. Receipts are generated on demand as accounting copies; PDF files are not uploaded or stored publicly.
 
 Validation: run `node --test tests/receipts.test.mjs` for snapshot rendering, HTML escaping, completion timestamps, and completed-only receipts. Run `npm run lint` and `npx expo export --platform web` before publishing. This feature requires a frontend Hosting rebuild; it uses the already deployed sandbox backend.
+
+### Admin cancellations and accounting flags
+
+Admins and super admins can cancel pending, approved, preparing, or ready orders from Order approvals. A reason (up to 500 characters) and confirmation are required. Customers receive the cancelled status through in-app updates and enabled device notifications. Payment verification is preserved; cancellation does not issue a refund. Completed, denied, and cancelled orders cannot be cancelled again.
+
+In Completed orders & receipts, use Flag completed order and enter a required reason. The order remains completed and its flag, actor, timestamp, and explanation are saved with its history. Flagged receipts display the reason when printed. Flags cannot be overwritten through this action. Conditional writes prevent concurrent changes from silently replacing the audit history. Deploy the backend and sync Hosting outputs before publishing this frontend. Run `node --test tests/admin-order-actions.test.mjs tests/receipts.test.mjs` for authorization, lifecycle, note validation, and receipt tests.
+
+### Users and roles
+
+Admins and super admins can open Account > Users & roles. The directory queries Cognito in pages of 20, supports email-prefix searches, and provides confirmation before role changes. Admins can assign User or Admin membership; only super admins can assign or change Super Admin membership. Self-role changes are blocked. Other custom Cognito groups are preserved. The backend checks the caller's current groups on every request and logs successful role changes. New role claims become effective when the affected user signs in again or refreshes their session. Role changes are not a replacement for revoking an existing session.
+
+Deploy the manage-users Lambda and AppSync operations, then sync Hosting outputs before publishing the new UI. Run `node --test tests/manage-users.test.mjs tests/receipt-search.test.mjs` for role boundaries, current-membership checks, pagination, and search/date validation.

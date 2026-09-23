@@ -2,4 +2,4 @@
 export const orderSelection = `id orderNumber owner status paymentMethod paymentReference paymentVerified
   customerFirstName customerLastName customerEmail customerPhone customerAddress
   lines { menuId name option category unitPrice quantity lineTotal }
-  subtotal total currency note placedAt decidedAt decidedBy decisionNote createdAt updatedAt requestHash history`
+  subtotal total currency note placedAt decidedAt decidedBy decisionNote createdAt updatedAt requestHash history flaggedAt flaggedBy flagReason`

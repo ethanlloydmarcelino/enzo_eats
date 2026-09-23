@@ -9,6 +9,8 @@ import { webPush } from '../functions/web-push/resource'
  * directly — `placeOrder` and `reviewOrder` are the only doors in, so payment
  * rules and approvals cannot be bypassed from a device.
  */
+import { manageUsers } from '../functions/manage-users/resource'
+
 const schema = a
   .schema({
     // Retain the existing sandbox table while adding the real order models.
@@ -64,6 +66,9 @@ const schema = a
         decidedAt: a.datetime(),
         decidedBy: a.string(),
         decisionNote: a.string(),
+        flaggedAt: a.datetime(),
+        flaggedBy: a.string(),
+        flagReason: a.string(),
         events: a.hasMany('OrderEvent', 'orderId'),
       })
       .secondaryIndexes((index) => [
@@ -133,9 +138,33 @@ const schema = a
       .authorization((allow) => [allow.groups(['admin', 'super_admin'])])
       .handler(a.handler.function(reviewOrder)),
 
+    listAccountUsers: a
+      .query()
+      .arguments({ nextToken: a.string(), emailPrefix: a.string() })
+      .returns(a.json())
+      .authorization((allow) => [allow.groups(['admin', 'super_admin'])])
+      .handler(a.handler.function(manageUsers)),
+    changeUserRole: a
+      .mutation()
+      .arguments({ username: a.string().required(), role: a.string().required() })
+      .returns(a.json())
+      .authorization((allow) => [allow.groups(['admin', 'super_admin'])])
+      .handler(a.handler.function(manageUsers)),
+
+    flagOrder: a
+      .mutation()
+      .arguments({ orderId: a.id().required(), flagReason: a.string().required() })
+      .returns(a.ref('Order'))
+      .authorization((allow) => [allow.groups(['admin', 'super_admin'])])
+      .handler(a.handler.function(reviewOrder)),
+
     advanceOrder: a
       .mutation()
-      .arguments({ orderId: a.id().required(), status: a.ref('OrderStatus').required() })
+      .arguments({
+        orderId: a.id().required(),
+        status: a.ref('OrderStatus').required(),
+        decisionNote: a.string(),
+      })
       .returns(a.ref('Order'))
       .authorization((allow) => [allow.groups(['admin', 'super_admin'])])
       .handler(a.handler.function(reviewOrder)),

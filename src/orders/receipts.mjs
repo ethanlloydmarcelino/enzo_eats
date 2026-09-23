@@ -2,7 +2,10 @@ export const completedAt = (order) => {
   try {
     const history = typeof order.history === 'string' ? JSON.parse(order.history) : order.history
     return Array.isArray(history)
-      ? ([...history].reverse().find((event) => event.status === 'COMPLETED')?.at ?? null)
+      ? ([...history]
+          .reverse()
+          .find((event) => event.status === 'COMPLETED' && event.type !== 'ORDER_FLAGGED')?.at ??
+          null)
       : null
   } catch {
     return null
@@ -34,6 +37,7 @@ export const receiptHtml = (order) => {
   </style></head><body><h1>Enzo Eats</h1><p>Itemized order receipt - accounting copy</p>
   <h2>${escape(order.orderNumber)}</h2>
   <p>Order ID: ${escape(order.id)}<br>Status: Completed<br>Ordered: ${escape(receiptDate(order.placedAt))}<br>Completed: ${escape(receiptDate(completedAt(order)))}</p>
+  ${order.flaggedAt ? '<p class="note"><strong>Flagged for review</strong><br>' + escape(order.flagReason) + '<br>Flagged: ' + escape(receiptDate(order.flaggedAt)) + '</p>' : ''}
   <h3>Customer</h3><p>${escape(order.customerFirstName)} ${escape(order.customerLastName)}<br>${escape(order.customerEmail)}<br>${escape(order.customerPhone)}${order.customerAddress ? '<br>' + escape(order.customerAddress) : ''}</p>
   <table><thead><tr><th>Item / option</th><th>Quantity</th><th>Unit price</th><th>Amount</th></tr></thead><tbody>
   ${(order.lines ?? []).map((line) => `<tr><td>${escape(line.name)}${line.option ? ' - ' + escape(line.option) : ''}</td><td>${escape(line.quantity)}</td><td>${money(line.unitPrice)}</td><td>${money(line.lineTotal)}</td></tr>`).join('')}

@@ -2,6 +2,7 @@
 // console. Kept beside authTranslations so translations.js stays readable.
 export const accountTranslations = {
   en: {
+    noticeCancelled: 'Order {number} was cancelled. Open your orders for the reason.',
     back: 'Back',
     done: 'Done',
 
@@ -110,6 +111,7 @@ export const accountTranslations = {
     orderErrorFailed: 'We could not place your order. Please try again.',
   },
   tl: {
+    noticeCancelled: 'Kinansela ang order {number}. Buksan ang orders para sa dahilan.',
     back: 'Bumalik',
     done: 'Tapos na',
 

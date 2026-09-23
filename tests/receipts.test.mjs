@@ -48,3 +48,20 @@ test('pending, denied and cancelled orders cannot produce completed accounting r
   for (const status of ['AWAITING_APPROVAL', 'DENIED', 'CANCELLED', 'READY'])
     assert.throws(() => receiptHtml({ ...order, status }), /Only completed/)
 })
+
+test('flag notes print safely without changing the original completion time', () => {
+  const flagged = {
+    ...order,
+    flaggedAt: '2026-09-23T00:00:00Z',
+    flagReason: '<script>bad</script>',
+    history: [
+      ...order.history,
+      { type: 'ORDER_FLAGGED', status: 'COMPLETED', at: '2026-09-23T00:00:00Z' },
+    ],
+  }
+  assert.equal(completedAt(flagged), completedAt(order))
+  const html = receiptHtml(flagged)
+  assert.match(html, /Flagged for review/)
+  assert.match(html, /&lt;script&gt;bad/)
+  assert.doesNotMatch(html, /<script>/)
+})

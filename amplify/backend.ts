@@ -12,12 +12,15 @@ import { Queue } from 'aws-cdk-lib/aws-sqs'
 import { SqsDlq } from 'aws-cdk-lib/aws-lambda-event-sources'
 import { webPush } from './functions/web-push/resource'
 
+import { manageUsers } from './functions/manage-users/resource'
+
 const backend = defineBackend({
   auth,
   data,
   placeOrder,
   reviewOrder,
   webPush,
+  manageUsers,
 })
 
 // This sandbox already has its required standard attributes. Cognito's update
@@ -69,3 +72,22 @@ new EventSourceMapping(pushStack, 'OrderPushStream', {
   maxRecordAge: Duration.hours(1),
   onFailure: new SqsDlq(failedPush),
 })
+
+backend.manageUsers.addEnvironment('USER_POOL_ID', backend.auth.resources.userPool.userPoolId)
+backend.manageUsers.resources.lambda.addToRolePolicy(
+  new PolicyStatement({
+    actions: [
+      'cognito-idp:ListUsers',
+      'cognito-idp:AdminGetUser',
+      'cognito-idp:AdminListGroupsForUser',
+      'cognito-idp:AdminAddUserToGroup',
+      'cognito-idp:AdminRemoveUserFromGroup',
+    ],
+    resources: [backend.auth.resources.userPool.userPoolArn],
+  }),
+)
+
+// Serialize group changes so two super admins cannot demote each other concurrently.
+;(
+  backend.manageUsers.resources.lambda.node.defaultChild as CfnFunction
+).reservedConcurrentExecutions = 1

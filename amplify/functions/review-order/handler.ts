@@ -20,6 +20,7 @@ const fail = (message: string): never => {
 export const handler = async (
   event: AppSyncResolverEvent<{
     orderId: string
+    flagReason?: string
     approve?: boolean
     decisionNote?: string | null
     status?: Schema['Order']['type']['status']
@@ -44,11 +45,28 @@ export const handler = async (
   const now = new Date().toISOString()
   // Amplify function handlers receive arguments and identity, not necessarily
   // the AppSync resolver's info object. These mutations have distinct inputs.
+  const flagging = typeof event.arguments.flagReason === 'string'
+  const flagReason = event.arguments.flagReason?.trim()
+  if (flagging && (!flagReason || flagReason.length > 500)) fail('FLAG_REASON_REQUIRED')
+  if (flagging && existing!.status !== 'COMPLETED') fail('ONLY_COMPLETED_CAN_BE_FLAGGED')
+  if (flagging && existing!.flaggedAt) fail('ORDER_ALREADY_FLAGGED')
   const reviewing = typeof approve === 'boolean'
-  const toStatus = reviewing ? (approve ? 'APPROVED' : 'DENIED') : event.arguments.status!
-  if (!reviewing && !['PREPARING', 'READY', 'COMPLETED'].includes(toStatus))
+  const toStatus = flagging
+    ? 'COMPLETED'
+    : reviewing
+      ? approve
+        ? 'APPROVED'
+        : 'DENIED'
+      : event.arguments.status!
+  const eventType = flagging ? 'ORDER_FLAGGED' : `ORDER_${toStatus}`
+  if (toStatus === 'CANCELLED' && !decisionNote?.trim()) fail('CANCELLATION_REASON_REQUIRED')
+  if (
+    !flagging &&
+    !reviewing &&
+    !['PREPARING', 'READY', 'COMPLETED', 'CANCELLED'].includes(toStatus)
+  )
     fail('INVALID_TRANSITION')
-  if (!transitionAllowed(existing!.status, toStatus)) fail('ORDER_ALREADY_DECIDED')
+  if (!flagging && !transitionAllowed(existing!.status, toStatus)) fail('ORDER_ALREADY_DECIDED')
   const history =
     typeof existing!.history === 'string'
       ? JSON.parse(existing!.history)
@@ -60,19 +78,23 @@ export const handler = async (
     history: JSON.stringify([
       ...history,
       {
-        type: `ORDER_${toStatus}`,
+        type: eventType,
         from: existing!.status,
         status: toStatus,
         at: now,
         actorId,
         actorRole,
-        note: decisionNote?.trim() || null,
+        note: flagging ? flagReason : decisionNote?.trim() || null,
       },
     ]),
+    ...(flagging ? { flaggedAt: now, flaggedBy: actorId, flagReason } : {}),
+    ...(toStatus === 'CANCELLED' ? { decisionNote: decisionNote!.trim() } : {}),
     // Cash is not marked paid merely because its pickup is approved.
-    paymentVerified: reviewing
-      ? !!approve && existing!.paymentMethod === 'GCASH'
-      : existing!.paymentVerified || toStatus === 'COMPLETED',
+    paymentVerified: flagging
+      ? existing!.paymentVerified
+      : reviewing
+        ? !!approve && existing!.paymentMethod === 'GCASH'
+        : existing!.paymentVerified || toStatus === 'COMPLETED',
     ...(reviewing
       ? { decidedAt: now, decidedBy: actorId, decisionNote: decisionNote?.trim() || null }
       : {}),
@@ -83,7 +105,10 @@ export const handler = async (
     query: `mutation Decide($input: UpdateOrderInput!, $condition: ModelOrderConditionInput) {
       updateOrder(input: $input, condition: $condition) { ${orderSelection} }
     }`,
-    variables: { input, condition: { status: { eq: existing!.status } } },
+    variables: {
+      input,
+      condition: { status: { eq: existing!.status }, updatedAt: { eq: existing!.updatedAt } },
+    },
   })) as { data?: { updateOrder?: Schema['Order']['type'] }; errors?: { message: string }[] }
   const order = result.data?.updateOrder
   const errors = result.errors
@@ -91,15 +116,15 @@ export const handler = async (
   if (errors?.length || !order) fail(errors?.[0]?.message ?? 'ORDER_UPDATE_FAILED')
 
   const eventWrite = await client.models.OrderEvent.create({
-    id: `${orderId}:${toStatus}`,
+    id: `${orderId}:${flagging ? 'FLAGGED' : toStatus}`,
     orderId,
     owner: existing!.owner,
-    type: `ORDER_${toStatus}`,
+    type: eventType,
     fromStatus: existing!.status,
     toStatus,
     actorId,
     actorRole,
-    message: decisionNote?.trim() || null,
+    message: flagging ? flagReason : decisionNote?.trim() || null,
     occurredAt: now,
   })
   if (eventWrite.errors?.length) console.error('ORDER_EVENT_WRITE_FAILED', { orderId })
