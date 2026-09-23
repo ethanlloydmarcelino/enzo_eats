@@ -117,3 +117,14 @@ test('flag audit identifies each actor, preserves revisions and safely prints th
   assert.match(html, /Note: Corrected/)
   assert.doesNotMatch(html, /<Admin>/)
 })
+
+test('legacy flags use recorded account IDs without inventing historical names or notes', () => {
+  const html = receiptHtml({
+    ...order,
+    flaggedAt: '2026-09-23T00:00:00Z',
+    flaggedBy: 'legacy-admin',
+    flagReason: 'Current note',
+  })
+  assert.match(html, /Account legacy-admin/)
+  assert.match(html, /Note: Not recorded/)
+})
