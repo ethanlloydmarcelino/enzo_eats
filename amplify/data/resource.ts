@@ -153,7 +153,11 @@ const schema = a
 
     flagOrder: a
       .mutation()
-      .arguments({ orderId: a.id().required(), flagReason: a.string().required() })
+      .arguments({
+        orderId: a.id().required(),
+        flagReason: a.string().required(),
+        expectedUpdatedAt: a.datetime(),
+      })
       .returns(a.ref('Order'))
       .authorization((allow) => [allow.groups(['admin', 'super_admin'])])
       .handler(a.handler.function(reviewOrder)),

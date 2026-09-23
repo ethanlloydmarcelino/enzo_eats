@@ -44,6 +44,25 @@ async function setup(status, extra = {}) {
       ';return exports.handler})()',
     {
       exports: {},
+      process: { env: { USER_POOL_ID: 'test-pool' } },
+      cognito: {
+        CognitoIdentityProviderClient: class {
+          async send(command) {
+            assert.equal(command.input.Username, 'admin-id')
+            return {
+              UserAttributes: [
+                { Name: 'given_name', Value: 'Alex' },
+                { Name: 'family_name', Value: 'Admin' },
+              ],
+            }
+          }
+        },
+        AdminGetUserCommand: class {
+          constructor(input) {
+            this.input = input
+          }
+        },
+      },
       Amplify: { configure: () => {} },
       generateClient: () => client,
       getAmplifyDataClientConfig: async () => ({}),
@@ -110,4 +129,52 @@ test('flags require a completed order and a nonempty bounded reason', async () =
     (await setup('COMPLETED')).run({ flagReason: 'Reason' }, 'user'),
     /NOT_AUTHORIZED/,
   )
+})
+
+test('both admin roles edit flag notes while retaining original flag and receipt metadata', async () => {
+  for (const role of ['admin', 'super_admin']) {
+    const { run, writes } = await setup('COMPLETED', {
+      flaggedAt: '2026-09-22T01:00:00Z',
+      flaggedBy: 'original-admin',
+      flagReason: 'Original note',
+    })
+    const result = await run(
+      { flagReason: ' Updated explanation ', expectedUpdatedAt: '2026-09-23T00:00:00Z' },
+      role,
+    )
+    assert.equal(result.flagReason, 'Updated explanation')
+    assert.equal(result.flaggedAt, '2026-09-22T01:00:00Z')
+    assert.equal(result.flaggedBy, 'original-admin')
+    assert.equal(result.status, 'COMPLETED')
+    assert.equal(result.paymentVerified, true)
+    const history = JSON.parse(result.history)
+    assert.equal(history.at(-1).type, 'ORDER_FLAG_NOTE_UPDATED')
+    assert.equal(history.at(-1).previousNote, 'Original note')
+    assert.equal(history.at(-1).actorRole, role)
+    assert.equal(history.at(-1).actorName, 'Alex Admin')
+    assert.equal(writes[0].condition.updatedAt.eq, '2026-09-23T00:00:00Z')
+  }
+})
+test('stale flag edits, blank notes and non-admin edits are rejected', async () => {
+  const { run, writes } = await setup('COMPLETED', {
+    flaggedAt: '2026-09-22T01:00:00Z',
+    flagReason: 'Current note',
+  })
+  await assert.rejects(
+    run({ flagReason: 'Stale', expectedUpdatedAt: '2026-09-22T00:00:00Z' }),
+    /ORDER_CHANGED_REFRESH/,
+  )
+  await assert.rejects(
+    run({ flagReason: ' ', expectedUpdatedAt: '2026-09-23T00:00:00Z' }),
+    /FLAG_REASON_REQUIRED/,
+  )
+  await assert.rejects(
+    run({ flagReason: 'a'.repeat(501), expectedUpdatedAt: '2026-09-23T00:00:00Z' }),
+    /FLAG_REASON_REQUIRED/,
+  )
+  await assert.rejects(
+    run({ flagReason: 'Changed', expectedUpdatedAt: '2026-09-23T00:00:00Z' }, 'user'),
+    /NOT_AUTHORIZED/,
+  )
+  assert.equal(writes.length, 0)
 })

@@ -91,3 +91,11 @@ backend.manageUsers.resources.lambda.addToRolePolicy(
 ;(
   backend.manageUsers.resources.lambda.node.defaultChild as CfnFunction
 ).reservedConcurrentExecutions = 1
+
+backend.reviewOrder.addEnvironment('USER_POOL_ID', backend.auth.resources.userPool.userPoolId)
+backend.reviewOrder.resources.lambda.addToRolePolicy(
+  new PolicyStatement({
+    actions: ['cognito-idp:AdminGetUser'],
+    resources: [backend.auth.resources.userPool.userPoolArn],
+  }),
+)

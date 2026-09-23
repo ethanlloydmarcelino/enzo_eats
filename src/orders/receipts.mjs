@@ -1,11 +1,16 @@
+import { flagHistory, flagActor } from './flagHistory.mjs'
+
 export const completedAt = (order) => {
   try {
     const history = typeof order.history === 'string' ? JSON.parse(order.history) : order.history
     return Array.isArray(history)
       ? ([...history]
           .reverse()
-          .find((event) => event.status === 'COMPLETED' && event.type !== 'ORDER_FLAGGED')?.at ??
-          null)
+          .find(
+            (event) =>
+              event.status === 'COMPLETED' &&
+              !['ORDER_FLAGGED', 'ORDER_FLAG_NOTE_UPDATED'].includes(event.type),
+          )?.at ?? null)
       : null
   } catch {
     return null
@@ -45,5 +50,28 @@ export const receiptHtml = (order) => {
   <p>Payment: ${escape(order.paymentMethod)}<br>Payment verified: ${order.paymentVerified ? 'Yes' : 'No'}${order.paymentReference ? '<br>Reference: ' + escape(order.paymentReference) : ''}</p>
   ${order.note ? '<p class="note">Customer note: ' + escape(order.note) + '</p>' : ''}
   ${order.decisionNote ? '<p class="note">Admin note: ' + escape(order.decisionNote) + '</p>' : ''}
+  ${
+    order.flaggedAt
+      ? '<h3>Flag history</h3>' +
+        flagHistory(order)
+          .map(
+            (event) =>
+              '<div class="note"><p><strong>' +
+              (event.type === 'ORDER_FLAGGED' ? 'Order flagged' : 'Flag note edited') +
+              '</strong><br>' +
+              escape(flagActor(event)) +
+              (event.actorId ? '<br>Account ID: ' + escape(event.actorId) : '') +
+              '<br>' +
+              escape(receiptDate(event.at)) +
+              (event.previousNote !== undefined
+                ? '<br>Previous note: ' + escape(event.previousNote)
+                : '') +
+              '<br>Note: ' +
+              escape(event.note ?? 'Not recorded') +
+              '</p></div>',
+          )
+          .join('')
+      : ''
+  }
   </body></html>`
 }

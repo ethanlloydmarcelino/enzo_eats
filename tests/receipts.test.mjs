@@ -65,3 +65,55 @@ test('flag notes print safely without changing the original completion time', ()
   assert.match(html, /&lt;script&gt;bad/)
   assert.doesNotMatch(html, /<script>/)
 })
+
+test('editing a flag never changes the receipt completion time', () => {
+  const edited = {
+    ...order,
+    flaggedAt: '2026-09-23T00:00:00Z',
+    flagReason: 'Updated note',
+    history: [
+      ...order.history,
+      { type: 'ORDER_FLAG_NOTE_UPDATED', status: 'COMPLETED', at: '2026-09-24T00:00:00Z' },
+    ],
+  }
+  assert.equal(completedAt(edited), completedAt(order))
+  assert.match(receiptHtml(edited), /Updated note/)
+})
+
+test('flag audit identifies each actor, preserves revisions and safely prints their names', () => {
+  const history = [
+    ...order.history,
+    {
+      type: 'ORDER_FLAGGED',
+      at: '2026-09-23T01:00:00Z',
+      actorId: 'admin-1',
+      actorName: 'Alex <Admin>',
+      actorRole: 'admin',
+      note: 'Original',
+    },
+    {
+      type: 'ORDER_FLAG_NOTE_UPDATED',
+      at: '2026-09-23T02:00:00Z',
+      actorId: 'admin-2',
+      actorName: 'Sam Reviewer',
+      actorRole: 'super_admin',
+      previousNote: 'Original',
+      note: 'Corrected',
+    },
+  ]
+  const audited = {
+    ...order,
+    flaggedAt: '2026-09-23T01:00:00Z',
+    flaggedBy: 'admin-1',
+    flagReason: 'Corrected',
+    history: JSON.stringify(history),
+  }
+  const html = receiptHtml(audited)
+  assert.match(html, /Flag history/)
+  assert.match(html, /Alex &lt;Admin&gt;/)
+  assert.match(html, /Sam Reviewer/)
+  assert.match(html, /Account ID: admin-1/)
+  assert.match(html, /Previous note: Original/)
+  assert.match(html, /Note: Corrected/)
+  assert.doesNotMatch(html, /<Admin>/)
+})

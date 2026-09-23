@@ -1,5 +1,6 @@
 import type { AppSyncIdentityCognito, AppSyncResolverEvent } from 'aws-lambda'
 import { Amplify } from 'aws-amplify'
+import * as cognito from '@aws-sdk/client-cognito-identity-provider'
 import { generateClient } from 'aws-amplify/data'
 import { getAmplifyDataClientConfig } from '@aws-amplify/backend/function/runtime'
 import { env } from '$amplify/env/review-order'
@@ -11,6 +12,8 @@ const { resourceConfig, libraryOptions } = await getAmplifyDataClientConfig(env)
 Amplify.configure(resourceConfig, libraryOptions)
 const client = generateClient<Schema>()
 
+const identityClient = new cognito.CognitoIdentityProviderClient({})
+
 const ADMIN_GROUPS = ['super_admin', 'admin']
 
 const fail = (message: string): never => {
@@ -21,6 +24,7 @@ export const handler = async (
   event: AppSyncResolverEvent<{
     orderId: string
     flagReason?: string
+    expectedUpdatedAt?: string
     approve?: boolean
     decisionNote?: string | null
     status?: Schema['Order']['type']['status']
@@ -49,7 +53,13 @@ export const handler = async (
   const flagReason = event.arguments.flagReason?.trim()
   if (flagging && (!flagReason || flagReason.length > 500)) fail('FLAG_REASON_REQUIRED')
   if (flagging && existing!.status !== 'COMPLETED') fail('ONLY_COMPLETED_CAN_BE_FLAGGED')
-  if (flagging && existing!.flaggedAt) fail('ORDER_ALREADY_FLAGGED')
+  const editingFlag = flagging && !!existing!.flaggedAt
+  if (editingFlag && !event.arguments.expectedUpdatedAt) fail('ORDER_ALREADY_FLAGGED')
+  if (
+    event.arguments.expectedUpdatedAt &&
+    (!editingFlag || event.arguments.expectedUpdatedAt !== existing!.updatedAt)
+  )
+    fail('ORDER_CHANGED_REFRESH')
   const reviewing = typeof approve === 'boolean'
   const toStatus = flagging
     ? 'COMPLETED'
@@ -58,7 +68,11 @@ export const handler = async (
         ? 'APPROVED'
         : 'DENIED'
       : event.arguments.status!
-  const eventType = flagging ? 'ORDER_FLAGGED' : `ORDER_${toStatus}`
+  const eventType = editingFlag
+    ? 'ORDER_FLAG_NOTE_UPDATED'
+    : flagging
+      ? 'ORDER_FLAGGED'
+      : `ORDER_${toStatus}`
   if (toStatus === 'CANCELLED' && !decisionNote?.trim()) fail('CANCELLATION_REASON_REQUIRED')
   if (
     !flagging &&
@@ -67,6 +81,19 @@ export const handler = async (
   )
     fail('INVALID_TRANSITION')
   if (!flagging && !transitionAllowed(existing!.status, toStatus)) fail('ORDER_ALREADY_DECIDED')
+  let actorName: string | undefined
+  if (flagging) {
+    const profile = await identityClient.send(
+      new cognito.AdminGetUserCommand({
+        UserPoolId: process.env.USER_POOL_ID!,
+        Username: identity?.username || actorId!,
+      }),
+    )
+    const attribute = (name: string) =>
+      profile.UserAttributes?.find((value) => value.Name === name)?.Value || ''
+    actorName =
+      [attribute('given_name'), attribute('family_name')].filter(Boolean).join(' ') || undefined
+  }
   const history =
     typeof existing!.history === 'string'
       ? JSON.parse(existing!.history)
@@ -84,10 +111,16 @@ export const handler = async (
         at: now,
         actorId,
         actorRole,
+        ...(actorName ? { actorName } : {}),
         note: flagging ? flagReason : decisionNote?.trim() || null,
+        ...(editingFlag ? { previousNote: existing!.flagReason } : {}),
       },
     ]),
-    ...(flagging ? { flaggedAt: now, flaggedBy: actorId, flagReason } : {}),
+    ...(flagging
+      ? editingFlag
+        ? { flagReason }
+        : { flaggedAt: now, flaggedBy: actorId, flagReason }
+      : {}),
     ...(toStatus === 'CANCELLED' ? { decisionNote: decisionNote!.trim() } : {}),
     // Cash is not marked paid merely because its pickup is approved.
     paymentVerified: flagging
@@ -116,7 +149,9 @@ export const handler = async (
   if (errors?.length || !order) fail(errors?.[0]?.message ?? 'ORDER_UPDATE_FAILED')
 
   const eventWrite = await client.models.OrderEvent.create({
-    id: `${orderId}:${flagging ? 'FLAGGED' : toStatus}`,
+    id: editingFlag
+      ? `${orderId}:FLAG_NOTE_UPDATED:${now}:${existing!.updatedAt}`
+      : `${orderId}:${flagging ? 'FLAGGED' : toStatus}`,
     orderId,
     owner: existing!.owner,
     type: eventType,

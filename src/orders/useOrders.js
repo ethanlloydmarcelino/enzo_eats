@@ -115,9 +115,18 @@ export const usePlaceOrder = () => {
 export const useReviewOrder = () => {
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: async ({ orderId, approve, decisionNote, status, flagReason }) =>
+    mutationFn: async ({
+      orderId,
+      approve,
+      decisionNote,
+      status,
+      flagReason,
+      expectedUpdatedAt,
+    }) =>
       flagReason !== undefined
-        ? throwOnErrors(await dataClient.mutations.flagOrder({ orderId, flagReason }))
+        ? throwOnErrors(
+            await dataClient.mutations.flagOrder({ orderId, flagReason, expectedUpdatedAt }),
+          )
         : status
           ? throwOnErrors(
               await dataClient.mutations.advanceOrder({ orderId, status, decisionNote }),

@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { FlagHistory } from './FlagHistory'
 import { receiptDate } from '../../orders/receipts.mjs'
 import { Pressable, Text, TextInput, View } from 'react-native'
 import { useReviewOrder } from '../../orders/useOrders'
@@ -10,18 +11,13 @@ export const AdminOrderAction = ({ order, flag = false }) => {
   const [open, setOpen] = useState(false)
   const [reason, setReason] = useState('')
   const [error, setError] = useState('')
+  const [editVersion, setEditVersion] = useState(undefined)
   if (!['admin', 'super_admin'].includes(role)) return null
-  if (flag && order.flaggedAt)
-    return (
-      <View style={{ padding: 12, backgroundColor: '#fff3cd', borderRadius: 8, gap: 4 }}>
-        <Text style={{ color: '#664d03', fontWeight: 'bold' }}>Flagged for review</Text>
-        <Text selectable style={{ color: '#664d03' }}>
-          {order.flagReason}
-        </Text>
-        <Text style={{ color: '#664d03' }}>Flagged: {receiptDate(order.flaggedAt)}</Text>
-      </View>
-    )
-  const title = flag ? 'Flag completed order' : 'Cancel order'
+  const title = flag
+    ? order.flaggedAt
+      ? 'Edit flag note'
+      : 'Flag completed order'
+    : 'Cancel order'
   const submit = () => {
     if (!reason.trim()) {
       setError('Please enter a reason.')
@@ -30,24 +26,45 @@ export const AdminOrderAction = ({ order, flag = false }) => {
     setError('')
     mutation.mutate(
       flag
-        ? { orderId: order.id, flagReason: reason.trim() }
+        ? { orderId: order.id, flagReason: reason.trim(), expectedUpdatedAt: editVersion }
         : { orderId: order.id, status: 'CANCELLED', decisionNote: reason.trim() },
       {
         onSuccess: () => {
           setOpen(false)
           setReason('')
         },
-        onError: () =>
+        onError: (cause) =>
           setError(
-            'The order could not be updated. Refresh to check whether another admin changed it, then try again.',
+            cause?.message?.includes('ORDER_CHANGED_REFRESH')
+              ? 'Another admin changed this receipt. Close this editor, refresh the receipt, then reopen Edit flag note.'
+              : 'The order could not be updated. Refresh to check whether another admin changed it, then try again.',
           ),
       },
     )
   }
   return (
     <View style={{ gap: 10, marginVertical: 12 }}>
+      {flag && order.flaggedAt && (
+        <View style={{ padding: 12, backgroundColor: '#fff3cd', borderRadius: 8, gap: 4 }}>
+          <Text style={{ color: '#664d03', fontWeight: 'bold' }}>Flagged for review</Text>
+          <Text selectable style={{ color: '#664d03' }}>
+            {order.flagReason}
+          </Text>
+          <Text style={{ color: '#664d03' }}>Flagged: {receiptDate(order.flaggedAt)}</Text>
+          <FlagHistory order={order} />
+        </View>
+      )}
+
       {!open ? (
-        <Pressable accessibilityRole="button" onPress={() => setOpen(true)}>
+        <Pressable
+          accessibilityRole="button"
+          onPress={() => {
+            setReason(flag ? order.flagReason || '' : '')
+            setEditVersion(flag && order.flaggedAt ? order.updatedAt : undefined)
+            setError('')
+            setOpen(true)
+          }}
+        >
           <Text style={{ color: '#b42318', fontWeight: 'bold', padding: 10 }}>{title}</Text>
         </Pressable>
       ) : (
@@ -88,7 +105,13 @@ export const AdminOrderAction = ({ order, flag = false }) => {
             }}
           >
             <Text style={{ color: '#fff', fontWeight: 'bold' }}>
-              {mutation.isPending ? 'Saving...' : flag ? 'Confirm flag' : 'Confirm cancellation'}
+              {mutation.isPending
+                ? 'Saving...'
+                : flag
+                  ? order.flaggedAt
+                    ? 'Save note'
+                    : 'Confirm flag'
+                  : 'Confirm cancellation'}
             </Text>
           </Pressable>
           <Pressable
