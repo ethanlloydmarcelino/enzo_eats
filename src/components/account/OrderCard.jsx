@@ -1,3 +1,4 @@
+import { OrderHistory } from './OrderHistory'
 import { StyleSheet, Text, View } from 'react-native'
 import { fonts } from '../../fonts'
 import { useThemeStore } from '../../store/useThemeStore'
@@ -111,6 +112,7 @@ export const OrderCard = ({ order, showCustomer = false, children }) => {
         )}
       </View>
 
+      <OrderHistory order={order} />
       {children}
     </View>
   )

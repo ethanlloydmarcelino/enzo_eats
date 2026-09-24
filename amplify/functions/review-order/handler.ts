@@ -23,6 +23,7 @@ const fail = (message: string): never => {
 export const handler = async (
   event: AppSyncResolverEvent<{
     orderId: string
+    actorIds?: string[]
     flagReason?: string
     expectedUpdatedAt?: string
     approve?: boolean
@@ -45,6 +46,49 @@ export const handler = async (
 
   const { data: existing } = await client.models.Order.get({ id: orderId })
   if (!existing) fail('ORDER_NOT_FOUND')
+
+  if (event.arguments.actorIds !== undefined) {
+    const ids = event.arguments.actorIds
+    if (!Array.isArray(ids) || ids.length > 20 || ids.some((id) => typeof id !== 'string' || !id))
+      fail('INVALID_ACTOR_IDS')
+    let history: { type?: string; actorId?: string }[] = []
+    try {
+      const parsed =
+        typeof existing!.history === 'string' ? JSON.parse(existing!.history) : existing!.history
+      if (Array.isArray(parsed)) history = parsed
+    } catch {
+      /* Legacy history can be missing. */
+    }
+    const allowed = new Set(
+      history.filter((entry) => entry && entry.actorId).map((entry) => entry.actorId),
+    )
+    if (existing!.flaggedAt && existing!.flaggedBy) allowed.add(existing!.flaggedBy)
+    if (ids.some((id) => !allowed.has(id))) fail('NOT_AUTHORIZED')
+    const actors = await Promise.all(
+      [...new Set(ids)].map(async (id) => {
+        try {
+          const profile = await identityClient.send(
+            new cognito.AdminGetUserCommand({
+              UserPoolId: process.env.USER_POOL_ID!,
+              Username: id,
+            }),
+          )
+          const attribute = (name: string) =>
+            profile.UserAttributes?.find((value) => value.Name === name)?.Value?.trim() || ''
+          return {
+            id,
+            name:
+              [attribute('given_name'), attribute('family_name')].filter(Boolean).join(' ') || null,
+          }
+        } catch (error) {
+          if (error instanceof Error && error.name === 'UserNotFoundException')
+            return { id, name: null }
+          throw error
+        }
+      }),
+    )
+    return { actors }
+  }
 
   const now = new Date().toISOString()
   // Amplify function handlers receive arguments and identity, not necessarily
@@ -82,7 +126,7 @@ export const handler = async (
     fail('INVALID_TRANSITION')
   if (!flagging && !transitionAllowed(existing!.status, toStatus)) fail('ORDER_ALREADY_DECIDED')
   let actorName: string | undefined
-  if (flagging) {
+  {
     const profile = await identityClient.send(
       new cognito.AdminGetUserCommand({
         UserPoolId: process.env.USER_POOL_ID!,

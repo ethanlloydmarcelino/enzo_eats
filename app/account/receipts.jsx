@@ -1,3 +1,4 @@
+import { OrderHistory } from '../../src/components/account/OrderHistory'
 import { useEffect, useState } from 'react'
 import { router } from 'expo-router'
 import { Flag } from 'lucide-react-native'
@@ -102,10 +103,10 @@ const Receipts = () => {
       setError(cause.message)
     }
   }
-  const print = (order) => {
+  const print = async (order) => {
     setError('')
     try {
-      printReceipt(order)
+      await printReceipt(order)
     } catch (cause) {
       setError(cause.message)
     }
@@ -378,6 +379,7 @@ const Receipts = () => {
               )}
               {!!order.note && <Text style={text}>Customer note: {order.note}</Text>}
               {!!order.decisionNote && <Text style={text}>Admin note: {order.decisionNote}</Text>}
+              <OrderHistory key={order.id + 'history'} order={order} />
               <AdminOrderAction key={order.id} order={order} flag />
               <Pressable accessibilityRole="button" style={button} onPress={() => print(order)}>
                 <Text style={{ color: '#fff' }}>Print receipt / Save PDF</Text>

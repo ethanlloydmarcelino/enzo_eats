@@ -87,7 +87,14 @@ export const handler: Schema['placeOrder']['functionHandler'] = async (event) =>
     id,
     requestHash,
     history: JSON.stringify([
-      { type: 'ORDER_PLACED', status: 'AWAITING_APPROVAL', at: now, actorId: owner },
+      {
+        type: 'ORDER_PLACED',
+        status: 'AWAITING_APPROVAL',
+        at: now,
+        actorId: owner,
+        actorName: [attributes.given_name, attributes.family_name].join(' '),
+        actorRole: 'customer',
+      },
     ]),
     orderNumber: orderNumber(id),
     owner,

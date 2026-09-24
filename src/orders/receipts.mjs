@@ -1,4 +1,5 @@
-import { flagHistory, flagActor } from './flagHistory.mjs'
+import { orderHistory, orderAction } from './orderHistory.mjs'
+import { flagActor } from './flagHistory.mjs'
 
 export const completedAt = (order) => {
   try {
@@ -33,7 +34,7 @@ const escape = (value) =>
     /[&<>"']/g,
     (char) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[char],
   )
-export const receiptHtml = (order) => {
+export const receiptHtml = (order, actorNames = {}) => {
   if (order.status !== 'COMPLETED')
     throw new Error('Only completed orders have accounting receipts.')
   const money = (value) => escape(receiptMoney(value, order.currency))
@@ -51,27 +52,24 @@ export const receiptHtml = (order) => {
   ${order.note ? '<p class="note">Customer note: ' + escape(order.note) + '</p>' : ''}
   ${order.decisionNote ? '<p class="note">Admin note: ' + escape(order.decisionNote) + '</p>' : ''}
   ${
-    order.flaggedAt
-      ? '<h3>Flag history</h3>' +
-        flagHistory(order)
-          .map(
-            (event) =>
-              '<div class="note"><p><strong>' +
-              (event.type === 'ORDER_FLAGGED' ? 'Order flagged' : 'Flag note edited') +
-              '</strong><br>' +
-              escape(flagActor(event)) +
-              (event.actorId ? '<br>Account ID: ' + escape(event.actorId) : '') +
-              '<br>' +
-              escape(receiptDate(event.at)) +
-              (event.previousNote !== undefined
-                ? '<br>Previous note: ' + escape(event.previousNote)
-                : '') +
-              '<br>Note: ' +
-              escape(event.note ?? 'Not recorded') +
-              '</p></div>',
-          )
-          .join('')
-      : ''
+    '<h3>Order activity</h3>' +
+    orderHistory(order, actorNames)
+      .map(
+        (event) =>
+          '<div class="note"><p><strong>' +
+          escape(orderAction(event)) +
+          '</strong><br>' +
+          escape(flagActor(event)) +
+          '<br>' +
+          escape(receiptDate(event.at)) +
+          (event.previousNote !== undefined
+            ? '<br>Previous note: ' + escape(event.previousNote)
+            : '') +
+          '<br>Note: ' +
+          escape(event.note ?? 'Not recorded') +
+          '</p></div>',
+      )
+      .join('')
   }
   </body></html>`
 }

@@ -9,7 +9,7 @@ const compile = (path) =>
   }).outputText
 const rules = { exports: {} }
 vm.runInNewContext(compile('amplify/functions/shared/checkout.ts'), rules)
-async function setup(status, extra = {}) {
+async function setup(status, extra = {}, missingActor = false) {
   const existing = {
     id: 'order',
     owner: 'customer',
@@ -44,11 +44,17 @@ async function setup(status, extra = {}) {
       ';return exports.handler})()',
     {
       exports: {},
+      Error,
       process: { env: { USER_POOL_ID: 'test-pool' } },
       cognito: {
         CognitoIdentityProviderClient: class {
           async send(command) {
             assert.equal(command.input.Username, 'admin-id')
+            if (missingActor) {
+              const error = new Error('Missing')
+              error.name = 'UserNotFoundException'
+              throw error
+            }
             return {
               UserAttributes: [
                 { Name: 'given_name', Value: 'Alex' },
@@ -176,5 +182,54 @@ test('stale flag edits, blank notes and non-admin edits are rejected', async () 
     run({ flagReason: 'Changed', expectedUpdatedAt: '2026-09-23T00:00:00Z' }, 'user'),
     /NOT_AUTHORIZED/,
   )
+  assert.equal(writes.length, 0)
+})
+
+test('receipt actor lookup is read-only and restricted to flag participants and admins', async () => {
+  const { run, writes } = await setup('COMPLETED', {
+    flaggedAt: '2026-09-22',
+    flaggedBy: 'admin-id',
+  })
+  for (const role of ['admin', 'super_admin']) {
+    const result = await run({ actorIds: ['admin-id'] }, role)
+    assert.equal(result.actors[0].name, 'Alex Admin')
+  }
+  await assert.rejects(run({ actorIds: ['unrelated-user'] }), /NOT_AUTHORIZED/)
+  await assert.rejects(run({ actorIds: ['admin-id'] }, 'user'), /NOT_AUTHORIZED/)
+  await assert.rejects(run({ actorIds: Array(21).fill('admin-id') }), /INVALID_ACTOR_IDS/)
+  assert.equal(writes.length, 0)
+})
+
+test('deleted legacy actors return an unavailable name without exposing other user data', async () => {
+  const { run } = await setup('COMPLETED', { flaggedAt: '2026-09-22', flaggedBy: 'admin-id' }, true)
+  const result = await run({ actorIds: ['admin-id'] })
+  assert.equal(result.actors[0].name, null)
+})
+
+test('every status transition snapshots the authenticated actor name and role', async () => {
+  for (const [from, args, type] of [
+    ['AWAITING_APPROVAL', { approve: true }, 'ORDER_APPROVED'],
+    ['AWAITING_APPROVAL', { approve: false }, 'ORDER_DENIED'],
+    ['APPROVED', { status: 'PREPARING' }, 'ORDER_PREPARING'],
+    ['PREPARING', { status: 'READY' }, 'ORDER_READY'],
+    ['READY', { status: 'COMPLETED' }, 'ORDER_COMPLETED'],
+    ['READY', { status: 'CANCELLED', decisionNote: 'Unavailable' }, 'ORDER_CANCELLED'],
+  ]) {
+    const { run } = await setup(from)
+    const result = await run(args)
+    const event = JSON.parse(result.history).at(-1)
+    assert.equal(event.type, type)
+    assert.equal(event.actorName, 'Alex Admin')
+    assert.equal(event.actorRole, 'admin')
+    assert.ok(event.at)
+  }
+})
+test('legacy status actors can be resolved only when recorded on the order', async () => {
+  const { run, writes } = await setup('COMPLETED', {
+    history: JSON.stringify([{ type: 'ORDER_APPROVED', actorId: 'admin-id' }]),
+  })
+  const result = await run({ actorIds: ['admin-id'] })
+  assert.equal(result.actors[0].name, 'Alex Admin')
+  await assert.rejects(run({ actorIds: ['unrelated-user'] }), /NOT_AUTHORIZED/)
   assert.equal(writes.length, 0)
 })

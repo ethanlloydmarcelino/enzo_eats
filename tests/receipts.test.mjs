@@ -108,23 +108,61 @@ test('flag audit identifies each actor, preserves revisions and safely prints th
     flagReason: 'Corrected',
     history: JSON.stringify(history),
   }
-  const html = receiptHtml(audited)
-  assert.match(html, /Flag history/)
+  const html = receiptHtml(audited, { 'admin-1': 'Changed Name' })
+  assert.doesNotMatch(html, /Changed Name/)
+  assert.match(html, /Order activity/)
   assert.match(html, /Alex &lt;Admin&gt;/)
   assert.match(html, /Sam Reviewer/)
-  assert.match(html, /Account ID: admin-1/)
+  assert.doesNotMatch(html, /admin-1|admin-2|Account ID/)
   assert.match(html, /Previous note: Original/)
   assert.match(html, /Note: Corrected/)
   assert.doesNotMatch(html, /<Admin>/)
 })
 
-test('legacy flags use recorded account IDs without inventing historical names or notes', () => {
+test('legacy flags hide account IDs when names are unavailable', () => {
   const html = receiptHtml({
     ...order,
     flaggedAt: '2026-09-23T00:00:00Z',
     flaggedBy: 'legacy-admin',
     flagReason: 'Current note',
   })
-  assert.match(html, /Account legacy-admin/)
+  assert.match(html, /Name unavailable/)
+  assert.doesNotMatch(html, /legacy-admin/)
   assert.match(html, /Note: Not recorded/)
+})
+
+test('legacy flag names resolve without replacing recorded names', () => {
+  const html = receiptHtml(
+    { ...order, flaggedAt: order.placedAt, flaggedBy: 'legacy-id' },
+    { 'legacy-id': 'Alex Admin' },
+  )
+  assert.match(html, /Alex Admin/)
+  assert.doesNotMatch(html, /legacy-id/)
+})
+
+test('unflagged receipts print all recorded steps with actor names and no actor IDs', () => {
+  const html = receiptHtml(
+    {
+      ...order,
+      history: [
+        { type: 'ORDER_APPROVED', actorId: 'approver-id', at: order.placedAt },
+        { type: 'ORDER_PREPARING', actorName: 'Cook Person', at: order.placedAt },
+        { type: 'ORDER_READY', actorName: 'Ready Person', at: order.placedAt },
+        { type: 'ORDER_COMPLETED', actorName: 'Complete Person', at: order.placedAt },
+      ],
+    },
+    { 'approver-id': 'Approve Person' },
+  )
+  for (const label of [
+    'Order approved',
+    'Preparation started',
+    'Marked ready',
+    'Order completed',
+    'Approve Person',
+    'Cook Person',
+    'Ready Person',
+    'Complete Person',
+  ])
+    assert.ok(html.includes(label))
+  assert.doesNotMatch(html, /approver-id/)
 })

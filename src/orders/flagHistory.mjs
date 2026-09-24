@@ -1,4 +1,4 @@
-export const flagHistory = (order) => {
+export const flagHistory = (order, actorNames = {}) => {
   let events = []
   try {
     const history = typeof order.history === 'string' ? JSON.parse(order.history) : order.history
@@ -12,10 +12,15 @@ export const flagHistory = (order) => {
   if (order.flaggedAt && !events.some((event) => event.type === 'ORDER_FLAGGED')) {
     events = [{ type: 'ORDER_FLAGGED', at: order.flaggedAt, actorId: order.flaggedBy }, ...events]
   }
-  return events
+  return events.map((event) => ({
+    ...event,
+    actorName: event.actorName || actorNames[event.actorId],
+  }))
 }
 export const flagActor = (event) => {
-  const name = event.actorName || (event.actorId ? 'Account ' + event.actorId : 'Not recorded')
-  const role = { admin: 'Admin', super_admin: 'Super admin' }[event.actorRole]
+  const name = event.actorName || 'Name unavailable'
+  const role = { admin: 'Admin', super_admin: 'Super admin', customer: 'Customer', user: 'User' }[
+    event.actorRole
+  ]
   return role ? name + ' (' + role + ')' : name
 }

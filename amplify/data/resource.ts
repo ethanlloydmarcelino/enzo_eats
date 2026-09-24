@@ -151,6 +151,12 @@ const schema = a
       .authorization((allow) => [allow.groups(['super_admin'])])
       .handler(a.handler.function(manageUsers)),
 
+    resolveFlagActors: a
+      .query()
+      .arguments({ orderId: a.id().required(), actorIds: a.string().required().array().required() })
+      .returns(a.json())
+      .authorization((allow) => [allow.groups(['admin', 'super_admin'])])
+      .handler(a.handler.function(reviewOrder)),
     flagOrder: a
       .mutation()
       .arguments({
