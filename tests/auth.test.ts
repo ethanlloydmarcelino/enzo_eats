@@ -323,3 +323,23 @@ test('session role comes from Cognito token groups, never editable attributes', 
   await adminStore.getState().logOut()
   assert.equal(adminStore.getState().role, null)
 })
+
+test('local Philippine signup input is normalized before profile validation', () => {
+  const result = profileAttributes({
+    firstName: 'Maria',
+    lastName: 'Santos',
+    phoneCountry: 'PH',
+    phoneNumber: '09171234567',
+  })
+  assert.equal(result.phone_number, '+639171234567')
+  assert.equal(profileError(result), null)
+})
+test('simplified shared password policy permits lowercase and rejects short or whitespace passwords', async () => {
+  const { passwordPolicy, cognitoPasswordPolicy } = await import('../shared/password-policy')
+  assert.equal(passwordIsValid('simplepassword', passwordPolicy), true)
+  assert.equal(passwordIsValid('12345678', passwordPolicy), true)
+  for (const password of ['short', 'has spaces', 'x'.repeat(257)])
+    assert.equal(passwordIsValid(password, passwordPolicy), false)
+  assert.equal(cognitoPasswordPolicy.minimumLength, passwordPolicy.min_length)
+  assert.equal(cognitoPasswordPolicy.requireSymbols, false)
+})

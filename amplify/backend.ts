@@ -1,3 +1,4 @@
+import { cognitoPasswordPolicy } from '../shared/password-policy'
 import { defineBackend } from '@aws-amplify/backend'
 import { auth } from './auth/resource'
 import { data } from './data/resource'
@@ -27,6 +28,7 @@ const backend = defineBackend({
 // handler attempts to add them again when Schema is sent during an update.
 // Omit that immutable declaration while preserving the existing pool and users.
 backend.auth.resources.cfnResources.cfnUserPool.addPropertyDeletionOverride('Schema')
+backend.auth.resources.cfnResources.cfnUserPool.policies = { passwordPolicy: cognitoPasswordPolicy }
 
 backend.placeOrder.addEnvironment('USER_POOL_ID', backend.auth.resources.userPool.userPoolId)
 backend.placeOrder.resources.lambda.addToRolePolicy(

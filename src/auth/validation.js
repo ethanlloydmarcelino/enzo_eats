@@ -1,7 +1,8 @@
+import { normalizePhone } from './phone.mjs'
 export const profileAttributes = (values) => ({
   given_name: (values.firstName ?? '').trim(),
   family_name: (values.lastName ?? '').trim(),
-  phone_number: (values.phoneNumber ?? '').replace(/[\s().-]/g, ''),
+  phone_number: normalizePhone(values.phoneNumber, values.phoneCountry),
   address: (values.address ?? '').trim(),
 })
 
@@ -16,6 +17,8 @@ export const profileError = (attributes) => {
 }
 
 export const passwordIsValid = (password, policy) =>
+  password.length <= 256 &&
+  !/\s/.test(password) &&
   password.length >= (policy?.min_length ?? 8) &&
   (!policy?.require_lowercase || /[a-z]/.test(password)) &&
   (!policy?.require_uppercase || /[A-Z]/.test(password)) &&

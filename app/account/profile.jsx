@@ -1,3 +1,5 @@
+import { PhoneField } from '../../src/components/PhoneField'
+import { phoneFormValues } from '../../src/auth/phone.mjs'
 import { useState } from 'react'
 import { ActivityIndicator, Pressable, StyleSheet, Text, TextInput, View } from 'react-native'
 import { AccountScreen } from '../../src/components/account/AccountScreen'
@@ -33,7 +35,7 @@ const Profile = () => {
   const [values, setValues] = useState(() => ({
     firstName: attributes?.given_name ?? '',
     lastName: attributes?.family_name ?? '',
-    phoneNumber: attributes?.phone_number ?? '',
+    ...phoneFormValues(attributes?.phone_number),
     address: attributes?.address ?? '',
   }))
   const [busy, setBusy] = useState(false)
@@ -101,16 +103,13 @@ const Profile = () => {
           {t('profileEmailHint')}
         </Text>
       </View>
-      <Field
-        colors={colors}
-        label={t('authPhone')}
-        hint={t('authPhoneHint')}
+      <PhoneField
+        country={values.phoneCountry}
         value={values.phoneNumber}
+        onCountryChange={change('phoneCountry')}
         onChangeText={change('phoneNumber')}
-        editable={!busy}
-        autoComplete="tel"
-        keyboardType="phone-pad"
-        placeholder="+639171234567"
+        disabled={busy}
+        colors={colors}
       />
       <Field
         colors={colors}

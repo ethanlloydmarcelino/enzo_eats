@@ -18,11 +18,13 @@ export const authTranslations = {
     authRoleAdmin: 'Admin',
     authRoleUser: 'User',
     authAddressHint: 'House / unit, street, barangay, city, province, postal code',
-    authPhoneHint: 'Include the country code, e.g. +639171234567.',
+    authPhoneCountry: 'Phone country',
+    authPhoneHint:
+      'Choose your country and enter your local number. We add the country code automatically.',
     authPassword: 'Password',
     authConfirmPassword: 'Confirm password',
     authPasswordHint:
-      'Use at least {length} characters, including uppercase and lowercase letters, a number, and a symbol.',
+      'Use at least {length} characters, without spaces. Uppercase letters, numbers, and symbols are optional.',
     authShowPassword: 'Show passwords',
     authHidePassword: 'Hide passwords',
     authForgot: 'Forgot password?',
@@ -54,7 +56,7 @@ export const authTranslations = {
     authRequiredFields:
       'Please complete all required fields (up to 2,048 characters each). Address is optional.',
     authInvalidEmail: 'Enter a valid email address.',
-    authInvalidPhone: 'Enter a phone number with + and its country code, e.g. +639171234567.',
+    authInvalidPhone: 'Enter a valid local number for the selected country.',
     authPasswordMismatch: 'The passwords do not match.',
     authPasswordInvalid: 'Choose a password that meets the requirements below.',
     authInvalidCredentials: 'Unable to sign in. Check your email and password.',
@@ -92,11 +94,13 @@ export const authTranslations = {
     authRoleAdmin: 'Admin',
     authRoleUser: 'User',
     authAddressHint: 'Bahay / unit, kalye, barangay, lungsod, probinsya, postal code',
-    authPhoneHint: 'Isama ang country code, hal. +639171234567.',
+    authPhoneCountry: 'Bansa ng numero',
+    authPhoneHint:
+      'Piliin ang bansa at ilagay ang lokal na numero. Awtomatikong idaragdag ang country code.',
     authPassword: 'Password',
     authConfirmPassword: 'Kumpirmahin ang password',
     authPasswordHint:
-      'Gumamit ng hindi bababa sa {length} character, malaki at maliit na titik, numero, at simbolo.',
+      'Gumamit ng hindi bababa sa {length} character, walang espasyo. Opsyonal ang malaking titik, numero, at simbolo.',
     authShowPassword: 'Ipakita ang mga password',
     authHidePassword: 'Itago ang mga password',
     authForgot: 'Nakalimutan ang password?',
@@ -128,7 +132,7 @@ export const authTranslations = {
     authRequiredFields:
       'Kumpletuhin ang mga kinakailangang field (hanggang 2,048 character bawat isa). Opsyonal ang tirahan.',
     authInvalidEmail: 'Maglagay ng wastong email address.',
-    authInvalidPhone: 'Ilagay ang numero na may + at country code, hal. +639171234567.',
+    authInvalidPhone: 'Ilagay ang tamang lokal na numero para sa napiling bansa.',
     authPasswordMismatch: 'Hindi magkapareho ang mga password.',
     authPasswordInvalid: 'Pumili ng password na sumusunod sa mga kinakailangan sa ibaba.',
     authInvalidCredentials: 'Hindi makapag-sign in. Suriin ang iyong email at password.',

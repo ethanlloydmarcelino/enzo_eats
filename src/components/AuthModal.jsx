@@ -1,3 +1,5 @@
+import { PhoneField } from './PhoneField'
+import { phoneFormValues } from '../auth/phone.mjs'
 import { useEffect, useRef, useState } from 'react'
 import {
   ActivityIndicator,
@@ -36,6 +38,7 @@ const emptyValues = {
   firstName: '',
   lastName: '',
   email: '',
+  phoneCountry: 'PH',
   phoneNumber: '',
   address: '',
   password: '',
@@ -90,7 +93,7 @@ const AccountForm = ({ colors, onClose }) => {
     firstName: attributes?.given_name ?? '',
     lastName: attributes?.family_name ?? '',
     email: attributes?.email ?? '',
-    phoneNumber: attributes?.phone_number ?? '',
+    ...phoneFormValues(attributes?.phone_number),
     address: attributes?.address ?? '',
   }))
   const [busy, setBusy] = useState(false)
@@ -386,14 +389,14 @@ const AccountForm = ({ colors, onClose }) => {
             })}
           {(signupMode || profileMode) && (
             <>
-              {field('phoneNumber', 'authPhone', {
-                autoComplete: 'tel',
-                keyboardType: 'phone-pad',
-                placeholder: '+639171234567',
-              })}
-              <Text style={[styles.hint, { color: colors.mutedForeground }]}>
-                {t('authPhoneHint')}
-              </Text>
+              <PhoneField
+                country={values.phoneCountry}
+                value={values.phoneNumber}
+                onCountryChange={change('phoneCountry')}
+                onChangeText={change('phoneNumber')}
+                disabled={disabled}
+                colors={colors}
+              />
               {field('address', 'authAddress', {
                 autoComplete: 'street-address',
                 multiline: true,
