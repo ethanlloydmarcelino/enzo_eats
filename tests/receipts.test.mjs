@@ -166,3 +166,15 @@ test('unflagged receipts print all recorded steps with actor names and no actor 
     assert.ok(html.includes(label))
   assert.doesNotMatch(html, /approver-id/)
 })
+
+test('completed then cancelled orders keep printable accounting receipts', () => {
+  const html = receiptHtml({
+    ...order,
+    status: 'CANCELLED',
+    completedAt: '2026-09-22T00:20:00Z',
+    decisionNote: 'Cancelled after pickup',
+  })
+  assert.match(html, /Cancelled after completion/)
+  assert.match(html, /Cancelled after pickup/)
+  assert.match(html, /Poppers/)
+})

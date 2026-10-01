@@ -34,10 +34,11 @@ export const round2 = (value: number) => Math.round(value * 100) / 100
 export const transitionAllowed = (from: string, to: string) =>
   (
     ({
-      AWAITING_APPROVAL: ['APPROVED', 'DENIED', 'CANCELLED'],
-      APPROVED: ['PREPARING', 'CANCELLED'],
-      PREPARING: ['READY', 'CANCELLED'],
-      READY: ['COMPLETED', 'CANCELLED'],
+      AWAITING_APPROVAL: ['PREPARING', 'DENIED', 'CANCELLED'],
+      APPROVED: ['PREPARING', 'READY', 'DENIED', 'CANCELLED'],
+      PREPARING: ['READY', 'DENIED', 'CANCELLED'],
+      READY: ['COMPLETED', 'DENIED', 'CANCELLED'],
+      COMPLETED: ['CANCELLED'],
     }) as Record<string, string[]>
   )[from]?.includes(to) ?? false
 

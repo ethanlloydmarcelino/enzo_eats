@@ -1,3 +1,4 @@
+import { OrderStepper } from '../../src/components/account/OrderStepper'
 import { OrderHistory } from '../../src/components/account/OrderHistory'
 import { useEffect, useState } from 'react'
 import { router } from 'expo-router'
@@ -12,7 +13,7 @@ import { printReceipt } from '../../src/orders/printReceipt'
 import { useAuthStore } from '../../src/store/useAuthStore'
 import { useThemeStore } from '../../src/store/useThemeStore'
 import { useColors } from '../../src/theme'
-const emptyFilters = { term: '', from: '', to: '', payment: '', flagged: '' }
+const emptyFilters = { receiptState: '', term: '', from: '', to: '', payment: '', flagged: '' }
 
 const OrderNumberCell = ({ order, colors }) => {
   const [hovered, setHovered] = useState(false)
@@ -164,6 +165,10 @@ const Receipts = () => {
     <AccountScreen title="Completed orders & receipts" subtitle="Searchable accounting archive">
       {allowed && (
         <>
+          {options('receiptState', [
+            ['', 'Done receipts'],
+            ['cancelled', 'Cancelled after Done'],
+          ])}
           <Text style={text}>
             Search saved order records. Dates are order dates in Philippine time. Text searches are
             case-sensitive.
@@ -379,8 +384,14 @@ const Receipts = () => {
               )}
               {!!order.note && <Text style={text}>Customer note: {order.note}</Text>}
               {!!order.decisionNote && <Text style={text}>Admin note: {order.decisionNote}</Text>}
+              <OrderStepper order={order} />
+              {order.status === 'COMPLETED' && (
+                <AdminOrderAction key={order.id + '-cancel'} order={order} />
+              )}
               <OrderHistory key={order.id + 'history'} order={order} />
-              <AdminOrderAction key={order.id} order={order} flag />
+              {order.status === 'COMPLETED' && (
+                <AdminOrderAction key={order.id} order={order} flag />
+              )}
               <Pressable accessibilityRole="button" style={button} onPress={() => print(order)}>
                 <Text style={{ color: '#fff' }}>Print receipt / Save PDF</Text>
               </Pressable>

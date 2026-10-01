@@ -37,10 +37,19 @@ const Admin = () => {
   }, [status, allowed])
 
   const decide = (order, approve) => {
+    if (!approve && !notes[order.id]?.trim()) {
+      setError('orderErrorDenialReason')
+      return
+    }
     setActing(`${order.id}:${approve}`)
     setError('')
     review.mutate(
-      { orderId: order.id, approve, decisionNote: notes[order.id] ?? '' },
+      {
+        orderId: order.id,
+        approve,
+        expectedStatus: order.status,
+        decisionNote: notes[order.id] ?? '',
+      },
       {
         onSuccess: () => setNotes((current) => ({ ...current, [order.id]: '' })),
         onError: (cause) => setError(orderErrorKey(cause)),
@@ -171,24 +180,42 @@ const Admin = () => {
           </Text>
           {operational.isError && <Text style={styles.error}>{t('ordersLoadError')}</Text>}
           {(operational.data ?? []).map((order) => {
-            const next = { APPROVED: 'PREPARING', PREPARING: 'READY', READY: 'COMPLETED' }[
-              order.status
-            ]
             return (
               <OrderCard key={order.id} order={order} showCustomer>
-                <Pressable
-                  accessibilityRole="button"
-                  disabled={review.isPending}
-                  style={[styles.button, { backgroundColor: colors.primary }]}
-                  onPress={() =>
-                    review.mutate(
-                      { orderId: order.id, status: next },
-                      { onError: (cause) => setError(orderErrorKey(cause)) },
-                    )
+                <TextInput
+                  accessibilityLabel="Reason for denial"
+                  value={notes[order.id] ?? ''}
+                  onChangeText={(value) =>
+                    setNotes((current) => ({ ...current, [order.id]: value }))
                   }
-                >
-                  <Text style={[styles.buttonText, { color: '#fff' }]}>{t(`advance${next}`)}</Text>
-                </Pressable>
+                  editable={!acting}
+                  maxLength={500}
+                  placeholder="Reason (required to deny)"
+                  placeholderTextColor={colors.mutedForeground}
+                  style={[styles.input, { color: colors.foreground, borderColor: colors.border }]}
+                />
+                <View style={styles.buttons}>
+                  <Pressable
+                    accessibilityRole="button"
+                    disabled={!!acting || review.isPending}
+                    style={[styles.button, styles.deny]}
+                    onPress={() => decide(order, false)}
+                  >
+                    <Text style={{ color: '#b42318' }}>Deny order</Text>
+                  </Pressable>
+                  <Pressable
+                    accessibilityRole="button"
+                    disabled={!!acting || review.isPending}
+                    style={[styles.button, { backgroundColor: colors.primary }]}
+                    onPress={() => decide(order, true)}
+                  >
+                    <Text style={[styles.buttonText, { color: '#fff' }]}>
+                      {order.status === 'READY'
+                        ? 'Approve pickup / Done'
+                        : 'Approve / Ready for pickup'}
+                    </Text>
+                  </Pressable>
+                </View>
                 <AdminOrderAction order={order} />
               </OrderCard>
             )

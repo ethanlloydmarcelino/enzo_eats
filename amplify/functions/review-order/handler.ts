@@ -26,6 +26,7 @@ export const handler = async (
     actorIds?: string[]
     flagReason?: string
     expectedUpdatedAt?: string
+    expectedStatus?: string
     approve?: boolean
     decisionNote?: string | null
     status?: Schema['Order']['type']['status']
@@ -105,18 +106,31 @@ export const handler = async (
   )
     fail('ORDER_CHANGED_REFRESH')
   const reviewing = typeof approve === 'boolean'
+  if (reviewing && (event.arguments.expectedStatus ?? 'AWAITING_APPROVAL') !== existing!.status)
+    fail('ORDER_CHANGED_REFRESH')
+  const nextStatus = (
+    {
+      AWAITING_APPROVAL: 'PREPARING',
+      APPROVED: 'READY',
+      PREPARING: 'READY',
+      READY: 'COMPLETED',
+    } as Record<string, string>
+  )[existing!.status]
   const toStatus = flagging
     ? 'COMPLETED'
     : reviewing
       ? approve
-        ? 'APPROVED'
+        ? (nextStatus as Schema['Order']['type']['status'])
         : 'DENIED'
       : event.arguments.status!
   const eventType = editingFlag
     ? 'ORDER_FLAG_NOTE_UPDATED'
     : flagging
       ? 'ORDER_FLAGGED'
-      : `ORDER_${toStatus}`
+      : reviewing && approve && existing!.status === 'AWAITING_APPROVAL'
+        ? 'ORDER_APPROVED'
+        : `ORDER_${toStatus}`
+  if (toStatus === 'DENIED' && !decisionNote?.trim()) fail('DENIAL_REASON_REQUIRED')
   if (toStatus === 'CANCELLED' && !decisionNote?.trim()) fail('CANCELLATION_REASON_REQUIRED')
   if (
     !flagging &&
@@ -146,6 +160,21 @@ export const handler = async (
   const input = {
     id: orderId,
     status: toStatus,
+    ...(toStatus === 'COMPLETED' && !flagging ? { completedAt: now, wasCompleted: true } : {}),
+    ...(toStatus === 'CANCELLED' && existing!.status === 'COMPLETED'
+      ? {
+          wasCompleted: true,
+          completedAt:
+            existing!.completedAt ||
+            [...history]
+              .reverse()
+              .find(
+                (entry: { type?: string; status?: string; at?: string }) =>
+                  entry.status === 'COMPLETED' &&
+                  !['ORDER_FLAGGED', 'ORDER_FLAG_NOTE_UPDATED'].includes(entry.type ?? ''),
+              )?.at,
+        }
+      : {}),
     history: JSON.stringify([
       ...history,
       {
@@ -165,14 +194,14 @@ export const handler = async (
         ? { flagReason }
         : { flaggedAt: now, flaggedBy: actorId, flagReason }
       : {}),
-    ...(toStatus === 'CANCELLED' ? { decisionNote: decisionNote!.trim() } : {}),
+    ...(['CANCELLED', 'DENIED'].includes(toStatus) ? { decisionNote: decisionNote!.trim() } : {}),
     // Cash is not marked paid merely because its pickup is approved.
     paymentVerified: flagging
       ? existing!.paymentVerified
-      : reviewing
-        ? !!approve && existing!.paymentMethod === 'GCASH'
-        : existing!.paymentVerified || toStatus === 'COMPLETED',
-    ...(reviewing
+      : existing!.paymentVerified ||
+        toStatus === 'COMPLETED' ||
+        (reviewing && !!approve && existing!.paymentMethod === 'GCASH'),
+    ...(reviewing && existing!.status === 'AWAITING_APPROVAL'
       ? { decidedAt: now, decidedBy: actorId, decisionNote: decisionNote?.trim() || null }
       : {}),
   }

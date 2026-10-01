@@ -2,6 +2,7 @@ import { orderHistory, orderAction } from './orderHistory.mjs'
 import { flagActor } from './flagHistory.mjs'
 
 export const completedAt = (order) => {
+  if (order.completedAt) return order.completedAt
   try {
     const history = typeof order.history === 'string' ? JSON.parse(order.history) : order.history
     return Array.isArray(history)
@@ -35,14 +36,17 @@ const escape = (value) =>
     (char) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[char],
   )
 export const receiptHtml = (order, actorNames = {}) => {
-  if (order.status !== 'COMPLETED')
+  if (
+    order.status !== 'COMPLETED' &&
+    !(order.status === 'CANCELLED' && (order.wasCompleted || order.completedAt))
+  )
     throw new Error('Only completed orders have accounting receipts.')
   const money = (value) => escape(receiptMoney(value, order.currency))
   return `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width"><title>Receipt ${escape(order.orderNumber)}</title><style>
   body{font:14px Arial,sans-serif;color:#111;max-width:760px;margin:32px auto;padding:16px}h1{margin-bottom:4px}p{overflow-wrap:anywhere;line-height:1.5}table{width:100%;border-collapse:collapse;margin:24px 0}th,td{padding:10px 6px;border-bottom:1px solid #ddd;text-align:right}th:first-child,td:first-child{text-align:left;overflow-wrap:anywhere}thead{display:table-header-group}tr{break-inside:avoid}.totals{text-align:right}.note{white-space:pre-wrap}@page{margin:16mm}@media print{body{margin:0;padding:0}}
   </style></head><body><h1>Enzo Eats</h1><p>Itemized order receipt - accounting copy</p>
   <h2>${escape(order.orderNumber)}</h2>
-  <p>Order ID: ${escape(order.id)}<br>Status: Completed<br>Ordered: ${escape(receiptDate(order.placedAt))}<br>Completed: ${escape(receiptDate(completedAt(order)))}</p>
+  <p>Order ID: ${escape(order.id)}<br>Status: ${order.status === 'CANCELLED' ? 'Cancelled after completion' : 'Done'}<br>Ordered: ${escape(receiptDate(order.placedAt))}<br>Completed: ${escape(receiptDate(completedAt(order)))}</p>
   ${order.flaggedAt ? '<p class="note"><strong>Flagged for review</strong><br>' + escape(order.flagReason) + '<br>Flagged: ' + escape(receiptDate(order.flaggedAt)) + '</p>' : ''}
   <h3>Customer</h3><p>${escape(order.customerFirstName)} ${escape(order.customerLastName)}<br>${escape(order.customerEmail)}<br>${escape(order.customerPhone)}${order.customerAddress ? '<br>' + escape(order.customerAddress) : ''}</p>
   <table><thead><tr><th>Item / option</th><th>Quantity</th><th>Unit price</th><th>Amount</th></tr></thead><tbody>

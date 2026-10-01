@@ -2,6 +2,8 @@ import {
   CognitoIdentityProviderClient,
   ListUsersCommand,
   AdminGetUserCommand,
+  AdminDeleteUserCommand,
+  AdminUserGlobalSignOutCommand,
   AdminListGroupsForUserCommand,
   AdminAddUserToGroupCommand,
   AdminRemoveUserFromGroupCommand,
@@ -26,6 +28,8 @@ const groupsFor = async (Username: string) => {
 }
 export const handler = async (
   event: AppSyncResolverEvent<{
+    deleteUsername?: string
+    expectedUserId?: string
     nextToken?: string
     emailPrefix?: string
     username?: string
@@ -39,6 +43,26 @@ export const handler = async (
   const actorGroups = await groupsFor(actor)
   if (roleOf(actorGroups) !== 'super_admin') throw new Error('NOT_AUTHORIZED')
   const args = event.arguments
+  if (args.deleteUsername !== undefined) {
+    if (!args.deleteUsername || args.deleteUsername.length > 128 || !args.expectedUserId)
+      throw new Error('INVALID_USER')
+    const target = await client.send(
+      new AdminGetUserCommand({ UserPoolId, Username: args.deleteUsername }),
+    )
+    const subject = target.UserAttributes?.find((attribute) => attribute.Name === 'sub')?.Value
+    if (subject !== args.expectedUserId) throw new Error('USER_CHANGED_REFRESH')
+    if (target.Username === actor || subject === identity?.sub || subject === identity?.claims?.sub)
+      throw new Error('SELF_DELETE_NOT_ALLOWED')
+    await client.send(new AdminUserGlobalSignOutCommand({ UserPoolId, Username: target.Username! }))
+    await client.send(new AdminDeleteUserCommand({ UserPoolId, Username: target.Username! }))
+    console.info('USER_DELETED', {
+      actor,
+      target: target.Username,
+      subject,
+      at: new Date().toISOString(),
+    })
+    return { deleted: true }
+  }
   if (args.username !== undefined) {
     if (!args.username || args.username.length > 128) throw new Error('INVALID_USER')
     const target = await client.send(

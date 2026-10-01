@@ -100,7 +100,7 @@ test('rejects missing cancellation reason, terminal cancellation and regular use
     (await setup('PREPARING')).run({ status: 'CANCELLED', decisionNote: ' ' }),
     /CANCELLATION_REASON_REQUIRED/,
   )
-  for (const status of ['COMPLETED', 'DENIED', 'CANCELLED'])
+  for (const status of ['DENIED', 'CANCELLED'])
     await assert.rejects(
       (await setup(status)).run({ status: 'CANCELLED', decisionNote: 'Reason' }),
       /ORDER_ALREADY_DECIDED/,
@@ -209,7 +209,7 @@ test('deleted legacy actors return an unavailable name without exposing other us
 test('every status transition snapshots the authenticated actor name and role', async () => {
   for (const [from, args, type] of [
     ['AWAITING_APPROVAL', { approve: true }, 'ORDER_APPROVED'],
-    ['AWAITING_APPROVAL', { approve: false }, 'ORDER_DENIED'],
+    ['AWAITING_APPROVAL', { approve: false, decisionNote: 'Not available' }, 'ORDER_DENIED'],
     ['APPROVED', { status: 'PREPARING' }, 'ORDER_PREPARING'],
     ['PREPARING', { status: 'READY' }, 'ORDER_READY'],
     ['READY', { status: 'COMPLETED' }, 'ORDER_COMPLETED'],
@@ -232,4 +232,47 @@ test('legacy status actors can be resolved only when recorded on the order', asy
   assert.equal(result.actors[0].name, 'Alex Admin')
   await assert.rejects(run({ actorIds: ['unrelated-user'] }), /NOT_AUTHORIZED/)
   assert.equal(writes.length, 0)
+})
+
+test('approvals progress directly to processing, ready and done with stale-stage protection', async () => {
+  for (const [from, to] of [
+    ['AWAITING_APPROVAL', 'PREPARING'],
+    ['PREPARING', 'READY'],
+    ['APPROVED', 'READY'],
+    ['READY', 'COMPLETED'],
+  ]) {
+    for (const role of ['admin', 'super_admin']) {
+      const { run } = await setup(from, { paymentMethod: 'CASH', paymentVerified: false })
+      const result = await run({ approve: true, expectedStatus: from }, role)
+      assert.equal(result.status, to)
+      assert.equal(result.paymentVerified, to === 'COMPLETED')
+      assert.equal(JSON.parse(result.history).at(-1).actorName, 'Alex Admin')
+    }
+  }
+  await assert.rejects(
+    (await setup('PREPARING')).run({ approve: true, expectedStatus: 'AWAITING_APPROVAL' }),
+    /ORDER_CHANGED_REFRESH/,
+  )
+  await assert.rejects((await setup('PREPARING')).run({ approve: true }), /ORDER_CHANGED_REFRESH/)
+})
+test('later stage denials terminate orders and require a reason', async () => {
+  for (const from of ['AWAITING_APPROVAL', 'PREPARING', 'READY']) {
+    const { run } = await setup(from)
+    await assert.rejects(run({ approve: false, expectedStatus: from }), /DENIAL_REASON_REQUIRED/)
+    const result = await run({
+      approve: false,
+      expectedStatus: from,
+      decisionNote: 'Unable to fulfill',
+    })
+    assert.equal(result.status, 'DENIED')
+    assert.equal(result.decisionNote, 'Unable to fulfill')
+  }
+})
+test('cancellation after done retains payment, completion timestamp and full history', async () => {
+  const { run } = await setup('COMPLETED')
+  const result = await run({ status: 'CANCELLED', decisionNote: 'Pickup reversed' })
+  assert.equal(result.status, 'CANCELLED')
+  assert.equal(result.completedAt, '2026-09-22T00:00:00Z')
+  assert.equal(result.paymentVerified, true)
+  assert.equal(JSON.parse(result.history).at(-1).from, 'COMPLETED')
 })

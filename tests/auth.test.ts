@@ -343,3 +343,25 @@ test('simplified shared password policy permits lowercase and rejects short or w
   assert.equal(cognitoPasswordPolicy.minimumLength, passwordPolicy.min_length)
   assert.equal(cognitoPasswordPolicy.requireSymbols, false)
 })
+
+test('successful sign-in is complete only after the app restores the session', async () => {
+  const store = createAuthStore(sdk())
+  await store.getState().completeSignIn()
+  assert.equal(store.getState().status, 'signedIn')
+  assert.deepEqual(store.getState().user, user)
+})
+test('post-login session failures show an error instead of silently returning to signed-out', async () => {
+  for (const name of ['NotAuthorizedException', 'UserUnAuthenticatedException', 'NetworkError']) {
+    const store = createAuthStore(
+      sdk({
+        fetchUserAttributes: async () => {
+          throw Object.assign(new Error('Failed'), { name })
+        },
+      }),
+    )
+    await assert.rejects(store.getState().completeSignIn(), { name: 'SessionRestoreError' })
+    assert.equal(store.getState().status, 'error')
+    assert.equal(store.getState().sessionError, true)
+    assert.equal(store.getState().user, null)
+  }
+})

@@ -1,3 +1,4 @@
+import { orderNotificationAudience } from '../../../shared/order-notifications'
 import { createHash } from 'node:crypto'
 import webpush from 'web-push'
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb'
@@ -109,9 +110,10 @@ export const handler = async (
       const before = record.dynamodb.OldImage
         ? unmarshall(record.dynamodb.OldImage as any)
         : undefined
-      if (before?.status === order.status) continue
+      const audience = orderNotificationAudience(order.status, before?.status)
+      if (!audience) continue
       const tag = `${order.id}:${order.status}`
-      if (order.status === 'AWAITING_APPROVAL') {
+      if (audience === 'admin') {
         for (const owner of await admins())
           await send(owner, {
             title: 'Enzo Eats',
@@ -119,10 +121,10 @@ export const handler = async (
             tag,
             url: '/account/admin',
           })
-      } else {
+      } else if (audience === 'customer') {
         await send(order.owner, {
           title: 'Enzo Eats',
-          body: `Your order is ${String(order.status).toLowerCase().replaceAll('_', ' ')}. Open the app for details.`,
+          body: 'Your order is ready for pickup. Open the app for details.',
           tag,
           url: '/account/orders',
         })

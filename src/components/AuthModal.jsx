@@ -1,3 +1,4 @@
+import { router } from 'expo-router'
 import { PhoneField } from './PhoneField'
 import { phoneFormValues } from '../auth/phone.mjs'
 import { useEffect, useRef, useState } from 'react'
@@ -83,6 +84,7 @@ const AccountForm = ({ colors, onClose }) => {
     status,
     sessionError,
     refreshSession,
+    completeSignIn,
     saveProfile,
     logOut,
     returnToCart,
@@ -148,7 +150,13 @@ const AccountForm = ({ colors, onClose }) => {
           'signup-failed',
         )
       if (mounted.current) {
-        if (cause.name === 'UserNotConfirmedException') go('confirm')
+        if (cause.name === 'UserAlreadyAuthenticatedException') {
+          try {
+            await completeSignIn()
+          } catch (restoreError) {
+            if (mounted.current) setError(authErrorKey(restoreError))
+          }
+        } else if (cause.name === 'UserNotConfirmedException') go('confirm')
         else setError(authErrorKey(cause))
       }
     } finally {
@@ -159,8 +167,8 @@ const AccountForm = ({ colors, onClose }) => {
   const cooldown = () => setResendSeconds(30)
   const handleSignIn = async (result) => {
     if (result.isSignedIn) {
-      setValues(emptyValues)
-      await refreshSession()
+      await completeSignIn()
+      if (mounted.current) setValues(emptyValues)
       return
     }
     switch (result.nextStep.signInStep) {
@@ -552,7 +560,10 @@ export const AuthModal = () => {
         phone_number: attributes.phone_number ?? '',
         address: attributes.address ?? '',
       })
-    if (accountOpen && returnToCart && status === 'signedIn' && complete) closeAccount()
+    if (accountOpen && status === 'signedIn' && complete) {
+      closeAccount()
+      if (!returnToCart) router.push('/account')
+    }
   }, [accountOpen, returnToCart, status, attributes, closeAccount])
 
   return (

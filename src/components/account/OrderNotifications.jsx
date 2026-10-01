@@ -1,3 +1,4 @@
+import { orderNotificationAudience } from '../../../shared/order-notifications'
 import { useEffect, useState } from 'react'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import { router } from 'expo-router'
@@ -32,11 +33,7 @@ export const OrderNotifications = () => {
   }, [owner])
   const notices = [
     ...mine
-      .filter((order) =>
-        ['APPROVED', 'DENIED', 'PREPARING', 'READY', 'COMPLETED', 'CANCELLED'].includes(
-          order.status,
-        ),
-      )
+      .filter((order) => orderNotificationAudience(order.status) === 'customer')
       .map((order) => ({ order, admin: false })),
     ...pending.map((order) => ({ order, admin: true })),
   ].filter(({ order, admin }) => !seen.keys.includes(`${order.id}:${order.status}:${admin}`))
@@ -91,7 +88,7 @@ export const OrderNotifications = () => {
       >
         <Text style={{ color: '#fff' }}>
           {!notice.admin && ['PREPARING', 'READY', 'COMPLETED'].includes(notice.order.status)
-            ? `Order ${notice.order.orderNumber}: ${notice.order.status.toLowerCase()}`
+            ? `Order ${notice.order.orderNumber} is ready for pickup.`
             : t(key, { number: notice.order.orderNumber })}
         </Text>
       </Pressable>

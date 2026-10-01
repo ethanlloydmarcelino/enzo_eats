@@ -20,6 +20,8 @@ export default function Users() {
   const [prefix, setPrefix] = useState('')
   const [tokens, setTokens] = useState([undefined])
   const [pending, setPending] = useState(null)
+  const [deleteTarget, setDeleteTarget] = useState(null)
+  const [deleteText, setDeleteText] = useState('')
   const [busy, setBusy] = useState(false)
   const [message, setMessage] = useState('')
   const query = useQuery({
@@ -54,6 +56,30 @@ export default function Users() {
     } catch {
       setMessage(
         'Could not change the role. Refresh the list and check your permissions before retrying.',
+      )
+    } finally {
+      setBusy(false)
+    }
+  }
+  const removeUser = async () => {
+    if (!allowed || !deleteTarget || deleteText !== 'DELETE') return
+    setBusy(true)
+    setMessage('')
+    try {
+      decode(
+        await dataClient.mutations.deleteAccountUser({
+          deleteUsername: deleteTarget.username,
+          expectedUserId: deleteTarget.id,
+        }),
+      )
+      setDeleteTarget(null)
+      setDeleteText('')
+      setPending(null)
+      setMessage('User deleted. Historical orders and receipts are retained.')
+      await cache.invalidateQueries({ queryKey: ['admin-users'] })
+    } catch {
+      setMessage(
+        'Could not delete the user. Refresh the list before retrying. You cannot delete your own account.',
       )
     } finally {
       setBusy(false)
@@ -107,6 +133,54 @@ export default function Users() {
               Could not load users. Please refresh to retry.
             </Text>
           )}
+          {deleteTarget && (
+            <View
+              style={{
+                padding: 16,
+                gap: 12,
+                borderWidth: 1,
+                borderColor: '#b42318',
+                marginVertical: 12,
+              }}
+            >
+              <Text style={text}>
+                Permanently delete {deleteTarget.firstName} {deleteTarget.lastName} (
+                {deleteTarget.email})? They will lose account access. Historical orders and receipts
+                will remain. This cannot be undone.
+              </Text>
+              <TextInput
+                accessibilityLabel="Type DELETE to confirm user deletion"
+                placeholder="Type DELETE"
+                placeholderTextColor={colors.mutedForeground}
+                value={deleteText}
+                onChangeText={setDeleteText}
+                editable={!busy}
+                autoCapitalize="characters"
+                style={{ ...text, borderWidth: 1, borderColor: colors.border, padding: 12 }}
+              />
+              <Pressable
+                accessibilityRole="button"
+                disabled={busy || deleteText !== 'DELETE'}
+                onPress={() => void removeUser()}
+                style={{
+                  ...button,
+                  backgroundColor: '#b42318',
+                  opacity: busy || deleteText !== 'DELETE' ? 0.5 : 1,
+                }}
+              >
+                <Text style={{ color: '#fff' }}>
+                  {busy ? 'Deleting...' : 'Permanently delete user'}
+                </Text>
+              </Pressable>
+              <Pressable
+                accessibilityRole="button"
+                disabled={busy}
+                onPress={() => setDeleteTarget(null)}
+              >
+                <Text style={text}>Keep user</Text>
+              </Pressable>
+            </View>
+          )}
           {pending && (
             <View
               style={{
@@ -159,6 +233,21 @@ export default function Users() {
               <Text style={text}>
                 Role: {user.role} | Status: {user.status} | {user.enabled ? 'Enabled' : 'Disabled'}
               </Text>
+              {actor?.userId !== user.id && role === 'super_admin' && (
+                <Pressable
+                  accessibilityRole="button"
+                  disabled={busy}
+                  onPress={() => {
+                    setDeleteTarget(user)
+                    setDeleteText('')
+                    setPending(null)
+                    setMessage('')
+                  }}
+                  style={{ paddingVertical: 12 }}
+                >
+                  <Text style={{ color: '#b42318', fontWeight: 'bold' }}>Delete user</Text>
+                </Pressable>
+              )}
               {actor?.userId !== user.id &&
                 (role === 'super_admin' || user.role !== 'super_admin') && (
                   <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
@@ -172,6 +261,7 @@ export default function Users() {
                           style={button}
                           onPress={() => {
                             setMessage('')
+                            setDeleteTarget(null)
                             setPending({ user, role: next })
                           }}
                         >

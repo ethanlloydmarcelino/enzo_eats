@@ -1,3 +1,4 @@
+import { OrderStepper } from './OrderStepper'
 import { OrderHistory } from './OrderHistory'
 import { StyleSheet, Text, View } from 'react-native'
 import { fonts } from '../../fonts'
@@ -112,6 +113,7 @@ export const OrderCard = ({ order, showCustomer = false, children }) => {
         )}
       </View>
 
+      <OrderStepper order={order} />
       <OrderHistory order={order} />
       {children}
     </View>

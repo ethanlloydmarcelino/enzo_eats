@@ -1,5 +1,6 @@
 export const checkoutTranslations = {
   en: {
+    orderErrorDenialReason: 'Enter a reason before denying the order.',
     adminInProgress: 'Approved orders in progress',
     advancePREPARING: 'Start preparing',
     advanceREADY: 'Mark ready for pickup',
@@ -15,6 +16,7 @@ export const checkoutTranslations = {
     dismissNotice: 'Dismiss notification',
   },
   tl: {
+    orderErrorDenialReason: 'Maglagay ng dahilan bago tanggihan ang order.',
     adminInProgress: 'Mga aprubadong order',
     advancePREPARING: 'Simulan ang paghahanda',
     advanceREADY: 'Handa na para kunin',

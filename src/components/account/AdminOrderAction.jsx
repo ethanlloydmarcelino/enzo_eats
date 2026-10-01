@@ -72,7 +72,7 @@ export const AdminOrderAction = ({ order, flag = false }) => {
           <Text style={{ color: '#b42318' }}>
             {flag
               ? 'This keeps the order completed and records your explanation for accounting review.'
-              : 'This will stop the order and notify the customer. Any refund must be handled separately.'}
+              : 'This cancels the order and keeps its audit history. Any refund must be handled separately.'}
           </Text>
           <TextInput
             accessibilityLabel={flag ? 'Reason for flagging order' : 'Cancellation reason'}

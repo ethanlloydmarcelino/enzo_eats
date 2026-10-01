@@ -30,6 +30,8 @@ function setup(actorGroups = ['super_admin']) {
   for (const name of [
     'ListUsersCommand',
     'AdminGetUserCommand',
+    'AdminDeleteUserCommand',
+    'AdminUserGlobalSignOutCommand',
     'AdminListGroupsForUserCommand',
     'AdminAddUserToGroupCommand',
     'AdminRemoveUserFromGroupCommand',
@@ -47,7 +49,8 @@ function setup(actorGroups = ['super_admin']) {
       const { Username, GroupName } = command.input
       if (command.kind === 'AdminListGroupsForUserCommand')
         return { Groups: (members[Username] ?? []).map((GroupName) => ({ GroupName })) }
-      if (command.kind === 'AdminGetUserCommand') return { Username }
+      if (command.kind === 'AdminGetUserCommand')
+        return { Username, UserAttributes: [{ Name: 'sub', Value: Username + '-id' }] }
       if (command.kind === 'AdminAddUserToGroupCommand') {
         members[Username].push(GroupName)
         return {}
@@ -124,4 +127,39 @@ test('admins and users cannot list accounts or change roles directly', async () 
       false,
     )
   }
+})
+
+test('only a current super admin can delete another user, revoking sessions before deletion', async () => {
+  const { run, calls } = setup()
+  assert.equal((await run({ deleteUsername: 'target', expectedUserId: 'target-id' })).deleted, true)
+  const actions = calls.map((call) => call.kind)
+  assert.ok(
+    actions.indexOf('AdminUserGlobalSignOutCommand') < actions.indexOf('AdminDeleteUserCommand'),
+  )
+  for (const role of ['admin', 'user']) {
+    const denied = setup([role])
+    await assert.rejects(
+      denied.run({ deleteUsername: 'target', expectedUserId: 'target-id' }),
+      /NOT_AUTHORIZED/,
+    )
+    assert.equal(
+      denied.calls.some((call) => call.kind === 'AdminDeleteUserCommand'),
+      false,
+    )
+  }
+})
+test('self deletion and stale user selections are rejected without deleting anyone', async () => {
+  const { run, calls } = setup()
+  await assert.rejects(
+    run({ deleteUsername: 'actor', expectedUserId: 'actor-id' }),
+    /SELF_DELETE_NOT_ALLOWED/,
+  )
+  await assert.rejects(
+    run({ deleteUsername: 'target', expectedUserId: 'old-id' }),
+    /USER_CHANGED_REFRESH/,
+  )
+  assert.equal(
+    calls.some((call) => call.kind === 'AdminDeleteUserCommand'),
+    false,
+  )
 })

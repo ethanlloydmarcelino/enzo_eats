@@ -18,6 +18,8 @@ export const cartToLines = (cart, language = 'en') =>
   }))
 
 const messageKeys = {
+  DENIAL_REASON_REQUIRED: 'orderErrorDenialReason',
+  ORDER_CHANGED_REFRESH: 'orderErrorAlreadyDecided',
   PAYPAL_NOT_AVAILABLE: 'orderErrorFailed',
   INVALID_OPTION: 'orderErrorUnknownItem',
   REQUEST_ALREADY_USED: 'orderErrorFailed',

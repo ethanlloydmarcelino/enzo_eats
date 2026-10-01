@@ -37,6 +37,7 @@ export const authErrorKey = (error) => {
     InvalidPasswordException: 'authPasswordInvalid',
     PasswordHistoryPolicyViolationException: 'authPasswordInvalid',
     NetworkError: 'authNetworkError',
+    SessionRestoreError: 'authSessionError',
     UserLambdaValidationException: 'authProfileRejected',
   }
   return keys[error?.name] ?? 'authRequestFailed'

@@ -43,3 +43,12 @@ for (const [browser, endpoint] of [
     }
   })
 }
+
+test('customer notifications are ready-only; admins still receive new order notices', async () => {
+  const { orderNotificationAudience } = await import('../shared/order-notifications')
+  assert.equal(orderNotificationAudience('AWAITING_APPROVAL'), 'admin')
+  assert.equal(orderNotificationAudience('READY', 'PREPARING'), 'customer')
+  assert.equal(orderNotificationAudience('READY', 'READY'), null)
+  for (const status of ['APPROVED', 'PREPARING', 'COMPLETED', 'CANCELLED', 'DENIED'])
+    assert.equal(orderNotificationAudience(status), null)
+})

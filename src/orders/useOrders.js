@@ -118,6 +118,7 @@ export const useReviewOrder = () => {
     mutationFn: async ({
       orderId,
       approve,
+      expectedStatus,
       decisionNote,
       status,
       flagReason,
@@ -135,6 +136,7 @@ export const useReviewOrder = () => {
               await dataClient.mutations.reviewOrder({
                 orderId,
                 approve,
+                expectedStatus,
                 decisionNote: decisionNote || null,
               }),
             ),

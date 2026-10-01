@@ -63,6 +63,8 @@ const schema = a
         currency: a.string().required(),
         note: a.string(),
         placedAt: a.datetime().required(),
+        completedAt: a.datetime(),
+        wasCompleted: a.boolean(),
         decidedAt: a.datetime(),
         decidedBy: a.string(),
         decisionNote: a.string(),
@@ -132,6 +134,7 @@ const schema = a
       .arguments({
         orderId: a.id().required(),
         approve: a.boolean().required(),
+        expectedStatus: a.string(),
         decisionNote: a.string(),
       })
       .returns(a.ref('Order'))
@@ -141,6 +144,12 @@ const schema = a
     listAccountUsers: a
       .query()
       .arguments({ nextToken: a.string(), emailPrefix: a.string() })
+      .returns(a.json())
+      .authorization((allow) => [allow.groups(['super_admin'])])
+      .handler(a.handler.function(manageUsers)),
+    deleteAccountUser: a
+      .mutation()
+      .arguments({ deleteUsername: a.string().required(), expectedUserId: a.string().required() })
       .returns(a.json())
       .authorization((allow) => [allow.groups(['super_admin'])])
       .handler(a.handler.function(manageUsers)),

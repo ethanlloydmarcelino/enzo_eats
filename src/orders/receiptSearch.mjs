@@ -13,6 +13,7 @@ export const receiptSearch = (criteria = {}) => {
   const start = from ? new Date(from + 'T00:00:00+08:00').toISOString() : undefined
   const end = to ? new Date(to + 'T23:59:59.999+08:00').toISOString() : undefined
   const and = []
+  if (criteria.receiptState === 'cancelled') and.push({ wasCompleted: { eq: true } })
   const words = term.trim().split(/\s+/).filter(Boolean)
   if (words.length > 8) throw new Error('Please use up to 8 search words.')
   for (const word of words)
@@ -31,7 +32,7 @@ export const receiptSearch = (criteria = {}) => {
     and.push({ or: [{ flaggedAt: { attributeExists: false } }, { flaggedAt: { eq: null } }] })
   return {
     key: {
-      status: 'COMPLETED',
+      status: criteria.receiptState === 'cancelled' ? 'CANCELLED' : 'COMPLETED',
       ...(start && end
         ? { placedAt: { between: [start, end] } }
         : start

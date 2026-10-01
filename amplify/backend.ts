@@ -80,6 +80,8 @@ backend.manageUsers.resources.lambda.addToRolePolicy(
   new PolicyStatement({
     actions: [
       'cognito-idp:ListUsers',
+      'cognito-idp:AdminDeleteUser',
+      'cognito-idp:AdminUserGlobalSignOut',
       'cognito-idp:AdminGetUser',
       'cognito-idp:AdminListGroupsForUser',
       'cognito-idp:AdminAddUserToGroup',

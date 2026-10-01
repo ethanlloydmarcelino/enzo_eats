@@ -18,7 +18,7 @@ export const createAuthStore = (api) => {
       revision += 1
       set({ user: null, attributes: null, role: null, status: 'signedOut', sessionError: false })
     },
-    refreshSession: async () => {
+    refreshSession: async ({ afterSignIn = false } = {}) => {
       const request = ++revision
       set({ status: 'loading', sessionError: false })
       try {
@@ -33,9 +33,9 @@ export const createAuthStore = (api) => {
         return true
       } catch (error) {
         if (request !== revision) return false
-        const signedOut = ['UserUnAuthenticatedException', 'NotAuthorizedException'].includes(
-          error.name,
-        )
+        const signedOut =
+          !afterSignIn &&
+          ['UserUnAuthenticatedException', 'NotAuthorizedException'].includes(error.name)
         set({
           user: null,
           attributes: null,
@@ -44,6 +44,16 @@ export const createAuthStore = (api) => {
           sessionError: !signedOut,
         })
         return false
+      }
+    },
+    completeSignIn: async () => {
+      const restored = await get().refreshSession({ afterSignIn: true })
+      // A newer auth event can supersede this request. Only a confirmed store
+      // session counts as success; never clear the form on a failed restoration.
+      if (!restored && get().status !== 'signedIn') {
+        throw Object.assign(new Error('Unable to restore the signed-in session.'), {
+          name: 'SessionRestoreError',
+        })
       }
     },
     saveProfile: async (attributes) => {

@@ -34,3 +34,9 @@ test('full-name searches match first and last names across saved fields', () => 
   assert.equal(filter.and[0].or[2].customerFirstName.contains, 'Jane')
   assert.equal(filter.and[1].or[3].customerLastName.contains, 'Doe')
 })
+
+test('cancelled receipt search excludes orders that never reached done', () => {
+  const search = receiptSearch({ receiptState: 'cancelled' })
+  assert.equal(search.key.status, 'CANCELLED')
+  assert.deepEqual(search.filter.and, [{ wasCompleted: { eq: true } }])
+})

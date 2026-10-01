@@ -31,11 +31,11 @@ test('GCash requires a reference and unsupported payment methods remain blocked'
 })
 
 test('order lifecycle does not skip approval or overturn terminal decisions', () => {
-  assert.equal(transitionAllowed('AWAITING_APPROVAL', 'APPROVED'), true)
+  assert.equal(transitionAllowed('AWAITING_APPROVAL', 'PREPARING'), true)
   assert.equal(transitionAllowed('AWAITING_APPROVAL', 'DENIED'), true)
   assert.equal(transitionAllowed('AWAITING_APPROVAL', 'COMPLETED'), false)
   assert.equal(transitionAllowed('DENIED', 'APPROVED'), false)
-  assert.equal(transitionAllowed('APPROVED', 'DENIED'), false)
+  assert.equal(transitionAllowed('APPROVED', 'DENIED'), true)
   assert.equal(transitionAllowed('APPROVED', 'PREPARING'), true)
   assert.equal(transitionAllowed('PREPARING', 'READY'), true)
   assert.equal(transitionAllowed('READY', 'COMPLETED'), true)
