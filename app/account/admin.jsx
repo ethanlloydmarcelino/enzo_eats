@@ -12,8 +12,6 @@ import { useTranslations } from '../../src/translations'
 import { orderErrorKey } from '../../src/orders/client'
 import { useOrdersAwaitingReview, useReviewOrder } from '../../src/orders/useOrders'
 
-import { AdminOrderAction } from '../../src/components/account/AdminOrderAction'
-
 const ADMIN_ROLES = ['admin', 'super_admin']
 
 const Admin = () => {
@@ -38,7 +36,11 @@ const Admin = () => {
 
   const decide = (order, approve) => {
     if (!approve && !notes[order.id]?.trim()) {
-      setError('orderErrorDenialReason')
+      setError(
+        order.status === 'AWAITING_APPROVAL'
+          ? 'orderErrorDenialReason'
+          : 'orderErrorCancellationReason',
+      )
       return
     }
     setActing(`${order.id}:${approve}`)
@@ -46,7 +48,9 @@ const Admin = () => {
     review.mutate(
       {
         orderId: order.id,
-        approve,
+        ...(order.status !== 'AWAITING_APPROVAL' && !approve
+          ? { status: 'CANCELLED' }
+          : { approve }),
         expectedStatus: order.status,
         decisionNote: notes[order.id] ?? '',
       },
@@ -170,7 +174,6 @@ const Admin = () => {
                       </Pressable>
                     </View>
                   </View>
-                  <AdminOrderAction order={order} />
                 </OrderCard>
               ))}
             </View>
@@ -183,14 +186,14 @@ const Admin = () => {
             return (
               <OrderCard key={order.id} order={order} showCustomer>
                 <TextInput
-                  accessibilityLabel="Reason for denial"
+                  accessibilityLabel="Reason for cancellation"
                   value={notes[order.id] ?? ''}
                   onChangeText={(value) =>
                     setNotes((current) => ({ ...current, [order.id]: value }))
                   }
                   editable={!acting}
                   maxLength={500}
-                  placeholder="Reason (required to deny)"
+                  placeholder="Reason (required to cancel)"
                   placeholderTextColor={colors.mutedForeground}
                   style={[styles.input, { color: colors.foreground, borderColor: colors.border }]}
                 />
@@ -201,7 +204,7 @@ const Admin = () => {
                     style={[styles.button, styles.deny]}
                     onPress={() => decide(order, false)}
                   >
-                    <Text style={{ color: '#b42318' }}>Deny order</Text>
+                    <Text style={{ color: '#b42318' }}>Cancel</Text>
                   </Pressable>
                   <Pressable
                     accessibilityRole="button"
@@ -210,13 +213,10 @@ const Admin = () => {
                     onPress={() => decide(order, true)}
                   >
                     <Text style={[styles.buttonText, { color: '#fff' }]}>
-                      {order.status === 'READY'
-                        ? 'Approve pickup / Done'
-                        : 'Approve / Ready for pickup'}
+                      {order.status === 'READY' ? 'Done' : 'Ready'}
                     </Text>
                   </Pressable>
                 </View>
-                <AdminOrderAction order={order} />
               </OrderCard>
             )
           })}

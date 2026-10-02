@@ -1,3 +1,4 @@
+import { ensureMenuDefaults } from '../menu-catalog/seed'
 import type { AppSyncIdentityCognito } from 'aws-lambda'
 import { createHash } from 'node:crypto'
 import {
@@ -14,6 +15,7 @@ import { CURRENCY, priceOrder, normalizeGcashReference, round2 } from '../shared
 const { resourceConfig, libraryOptions } = await getAmplifyDataClientConfig(env)
 Amplify.configure(resourceConfig, libraryOptions)
 const client = generateClient<Schema>()
+let initializedMenu = false
 
 type Line = Schema['OrderLine']['type']
 type Arguments = {
@@ -47,8 +49,41 @@ export const handler: Schema['placeOrder']['functionHandler'] = async (event) =>
 
   if (!/^[a-zA-Z0-9-]{16,80}$/.test(requestId)) fail('INVALID_REQUEST_ID')
   if ((note?.length ?? 0) > 500) fail('NOTE_TOO_LONG')
-  const priced = priceOrder(lines, paymentMethod, reference)
   const id = createHash('sha256').update(`${owner}:${requestId}`).digest('hex')
+  if (!Array.isArray(lines) || !lines.length || lines.length > 40) fail('EMPTY_CART')
+  const previous = await client.models.Order.get({ id })
+  if (previous.errors?.length) fail('ORDER_READ_FAILED')
+  if (previous.data) {
+    const intent = (entries: any[]) =>
+      entries.map((line) => ({
+        menuId: line.menuId,
+        quantity: line.quantity,
+        unitPrice: line.unitPrice,
+        option: line.option?.toLowerCase().trim().replace(/\s+/g, '-') || null,
+      }))
+    if (
+      JSON.stringify(intent(previous.data.lines ?? [])) !== JSON.stringify(intent(lines)) ||
+      previous.data.paymentMethod !== paymentMethod ||
+      normalizeGcashReference(previous.data.paymentReference ?? '') !==
+        normalizeGcashReference(reference) ||
+      (previous.data.note ?? '') !== (note?.trim() ?? '')
+    )
+      fail('REQUEST_ALREADY_USED')
+    return previous.data
+  }
+  if (!initializedMenu) {
+    await ensureMenuDefaults(client.models)
+    initializedMenu = true
+  }
+  const catalog: Record<number, any> = {}
+  await Promise.all(
+    [...new Set(lines.map((line) => line.menuId))].map(async (menuId) => {
+      const item = await client.models.MenuItem.get({ id: String(menuId) })
+      if (item.errors?.length) fail('MENU_LOAD_FAILED')
+      if (item.data) catalog[menuId] = item.data
+    }),
+  )
+  const priced = priceOrder(lines, paymentMethod, reference, catalog)
   const requestHash = createHash('sha256')
     .update(
       JSON.stringify({
@@ -59,13 +94,6 @@ export const handler: Schema['placeOrder']['functionHandler'] = async (event) =>
       }),
     )
     .digest('hex')
-  const previous = await client.models.Order.get({ id })
-  if (previous.errors?.length) fail('ORDER_READ_FAILED')
-  if (previous.data) {
-    if (previous.data.requestHash !== requestHash) fail('REQUEST_ALREADY_USED')
-    return previous.data
-  }
-
   const subtotal = round2(priced.reduce((sum, line) => sum + line.lineTotal, 0))
 
   // Access tokens do not contain profile attributes. Read the current profile

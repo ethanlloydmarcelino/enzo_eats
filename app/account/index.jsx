@@ -114,6 +114,13 @@ const AccountHome = () => {
               onPress={() => router.push('/account/admin')}
             />
             <Row
+              Icon={Tag}
+              colors={colors}
+              label="Manage menu & photos"
+              hint="Items, prices, availability and photo library"
+              onPress={() => router.push('/account/menu')}
+            />
+            <Row
               Icon={ReceiptText}
               colors={colors}
               label="Completed orders & receipts"

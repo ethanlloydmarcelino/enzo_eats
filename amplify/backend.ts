@@ -1,3 +1,5 @@
+import { storage } from './storage/resource'
+import { menuCatalog } from './functions/menu-catalog/resource'
 import { cognitoPasswordPolicy } from '../shared/password-policy'
 import { defineBackend } from '@aws-amplify/backend'
 import { auth } from './auth/resource'
@@ -22,6 +24,8 @@ const backend = defineBackend({
   reviewOrder,
   webPush,
   manageUsers,
+  menuCatalog,
+  storage,
 })
 
 // This sandbox already has its required standard attributes. Cognito's update

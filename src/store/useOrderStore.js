@@ -31,6 +31,7 @@ export const useOrderStore = create((set, get) => ({
   },
   addToCart: (item) =>
     set((state) => {
+      if (item.available === false) return state
       const found = state.cart.find((entry) => entry.cartId === item.cartId)
       return {
         cart: found
@@ -47,6 +48,18 @@ export const useOrderStore = create((set, get) => ({
           entry.cartId === cartId ? { ...entry, quantity: entry.quantity + amount } : entry,
         )
         .filter((entry) => entry.quantity > 0),
+    })),
+  reconcileCart: (menu) =>
+    set((state) => ({
+      cart: state.cart.flatMap((entry) => {
+        const item = menu.find((value) => value.id === entry.id)
+        if (!item || item.available === false) return []
+        const selectedOption =
+          item.options?.find((option) => option.id === entry.selectedOption?.id) ?? null
+        if (item.options?.length && !selectedOption) return []
+        if (!item.options?.length && entry.selectedOption) return []
+        return [{ ...item, cartId: entry.cartId, quantity: entry.quantity, selectedOption }]
+      }),
     })),
   clearCart: () => set({ cart: [], paymentMethod: 'cash' }),
 }))

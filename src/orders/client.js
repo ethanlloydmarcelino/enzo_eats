@@ -18,14 +18,17 @@ export const cartToLines = (cart, language = 'en') =>
   }))
 
 const messageKeys = {
+  MENU_PRICE_CHANGED: 'orderErrorMenuChanged',
+  ITEM_UNAVAILABLE: 'orderErrorMenuChanged',
+  UNKNOWN_ITEM: 'orderErrorMenuChanged',
   DENIAL_REASON_REQUIRED: 'orderErrorDenialReason',
   ORDER_CHANGED_REFRESH: 'orderErrorAlreadyDecided',
   PAYPAL_NOT_AVAILABLE: 'orderErrorFailed',
-  INVALID_OPTION: 'orderErrorUnknownItem',
+  INVALID_OPTION: 'orderErrorMenuChanged',
   REQUEST_ALREADY_USED: 'orderErrorFailed',
   EMPTY_CART: 'orderErrorEmptyCart',
   CART_TOO_LARGE: 'orderErrorCartTooLarge',
-  UNKNOWN_ITEM: 'orderErrorUnknownItem',
+
   INVALID_QUANTITY: 'orderErrorQuantity',
   GCASH_REFERENCE_INVALID: 'orderErrorGcashReference',
   PROFILE_INCOMPLETE: 'orderErrorProfile',

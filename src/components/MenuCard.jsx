@@ -1,4 +1,4 @@
-import { Heart, Plus, Star } from 'lucide-react-native'
+import { Heart, Plus, Star, Utensils } from 'lucide-react-native'
 import { useState } from 'react'
 import { Image, Pressable, StyleSheet, Text, View } from 'react-native'
 import { fonts } from '../fonts'
@@ -8,7 +8,7 @@ import { useColors } from '../theme'
 import { useTranslations } from '../translations'
 
 export const MenuCard = ({ item, width }) => {
-  const [selectedOption, setSelectedOption] = useState(item.options?.[0] ?? null)
+  const [optionChoice, setSelectedOption] = useState(item.options?.[0] ?? null)
   const favorites = useOrderStore((state) => state.favorites)
   const toggleFavorite = useOrderStore((state) => state.toggleFavorite)
   const addToCart = useOrderStore((state) => state.addToCart)
@@ -16,14 +16,27 @@ export const MenuCard = ({ item, width }) => {
   const { language, t } = useTranslations()
   const favorite = favorites.includes(item.id)
   const itemName = item.name[language]
+  const selectedOption =
+    item.options?.find((option) => option.id === optionChoice?.id) || item.options?.[0] || null
 
   return (
     <View
       style={[styles.card, { width, backgroundColor: colors.card, borderColor: colors.border }]}
     >
       <View style={[styles.imageFrame, { backgroundColor: colors.muted }]}>
-        <Image source={item.image} resizeMode="cover" style={styles.image} />
-        {item.badge && (
+        {item.image ? (
+          <Image source={item.image} resizeMode="cover" style={styles.image} />
+        ) : (
+          <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
+            <Utensils size={42} color={colors.mutedForeground} />
+          </View>
+        )}
+        {item.available === false && (
+          <View style={[styles.badge, { backgroundColor: colors.card }]}>
+            <Text style={[styles.badgeText, { color: '#b42318' }]}>Unavailable</Text>
+          </View>
+        )}
+        {item.available !== false && item.badge && (
           <View style={[styles.badge, { backgroundColor: colors.card }]}>
             <Text style={[styles.badgeText, { color: colors.foreground }]}>{t(item.badge)}</Text>
           </View>
@@ -87,11 +100,15 @@ export const MenuCard = ({ item, width }) => {
           </View>
         )}
         <View style={styles.bottom}>
-          <View style={styles.rating}>
-            <Star size={14} color={colors.coral} fill={colors.coral} />
-            <Text style={[styles.ratingText, { color: colors.foreground }]}>{item.rating}</Text>
-          </View>
+          {!!item.rating && (
+            <View style={styles.rating}>
+              <Star size={14} color={colors.coral} fill={colors.coral} />
+              <Text style={[styles.ratingText, { color: colors.foreground }]}>{item.rating}</Text>
+            </View>
+          )}
           <Pressable
+            disabled={item.available === false}
+            accessibilityState={{ disabled: item.available === false }}
             onPress={() =>
               addToCart({
                 ...item,
@@ -99,10 +116,15 @@ export const MenuCard = ({ item, width }) => {
                 selectedOption,
               })
             }
-            style={[styles.add, { backgroundColor: colors.primary }]}
+            style={[
+              styles.add,
+              { backgroundColor: colors.primary, opacity: item.available === false ? 0.5 : 1 },
+            ]}
           >
             <Plus size={15} color="#fff" />
-            <Text style={styles.addText}>{t('add')}</Text>
+            <Text style={styles.addText}>
+              {item.available === false ? 'Unavailable' : t('add')}
+            </Text>
           </Pressable>
         </View>
       </View>

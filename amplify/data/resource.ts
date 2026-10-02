@@ -1,3 +1,4 @@
+import { menuCatalog } from '../functions/menu-catalog/resource'
 import { type ClientSchema, a, defineData } from '@aws-amplify/backend'
 import { placeOrder } from '../functions/place-order/resource'
 import { reviewOrder } from '../functions/review-order/resource'
@@ -15,6 +16,41 @@ const schema = a
   .schema({
     // Retain the existing sandbox table while adding the real order models.
     Todo: a.model({ content: a.string() }).authorization((allow) => [allow.guest()]),
+    MenuItem: a
+      .model({
+        name: a.string().required(),
+        nameTl: a.string(),
+        description: a.string().required(),
+        descriptionTl: a.string(),
+        price: a.float().required(),
+        category: a.string().required(),
+        visible: a.boolean().required(),
+        available: a.boolean().required(),
+        deleted: a.boolean().required(),
+        imageAssetId: a.string(),
+        options: a.string().array(),
+        updatedBy: a.string(),
+      })
+      .authorization((allow) => [allow.groups(['admin', 'super_admin']).to(['read'])]),
+    MenuImage: a
+      .model({
+        label: a.string().required(),
+        path: a.string(),
+        bundledId: a.integer(),
+      })
+      .authorization((allow) => [allow.groups(['admin', 'super_admin']).to(['read', 'create'])]),
+    publicMenu: a
+      .query()
+      .arguments({ nextToken: a.string() })
+      .returns(a.json())
+      .authorization((allow) => [allow.guest(), allow.authenticated('identityPool')])
+      .handler(a.handler.function(menuCatalog)),
+    manageMenu: a
+      .mutation()
+      .arguments({ action: a.string().required(), input: a.json() })
+      .returns(a.json())
+      .authorization((allow) => [allow.groups(['admin', 'super_admin'])])
+      .handler(a.handler.function(menuCatalog)),
     OrderStatus: a.enum([
       'AWAITING_APPROVAL',
       'APPROVED',
@@ -188,7 +224,11 @@ const schema = a
       .authorization((allow) => [allow.groups(['admin', 'super_admin'])])
       .handler(a.handler.function(reviewOrder)),
   })
-  .authorization((allow) => [allow.resource(placeOrder), allow.resource(reviewOrder)])
+  .authorization((allow) => [
+    allow.resource(placeOrder),
+    allow.resource(reviewOrder),
+    allow.resource(menuCatalog),
+  ])
 
 export type Schema = ClientSchema<typeof schema>
 

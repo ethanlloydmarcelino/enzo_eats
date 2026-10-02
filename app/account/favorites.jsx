@@ -20,12 +20,13 @@ const Favorites = () => {
   const { data: menu, isPending } = useQuery({
     queryKey: ['menu'],
     queryFn: fetchMenu,
-    refetchInterval: 45 * 60 * 1000,
+    refetchInterval: 30000,
   })
 
   const items = (menu ?? []).filter((item) => favorites.includes(item.id))
 
   const add = (item) => {
+    if (item.available === false) return
     // Items with flavour choices need the picker on the menu, so send those back
     // to the card rather than guessing a flavour here.
     if (item.options?.length) {
@@ -71,6 +72,7 @@ const Favorites = () => {
             </View>
             <Pressable
               accessibilityLabel={t('add')}
+              disabled={item.available === false}
               onPress={() => add(item)}
               style={[styles.iconButton, { backgroundColor: colors.primary }]}
             >

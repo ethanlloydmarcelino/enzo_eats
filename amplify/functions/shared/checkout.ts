@@ -43,9 +43,21 @@ export const transitionAllowed = (from: string, to: string) =>
   )[from]?.includes(to) ?? false
 
 export const priceOrder = (
-  lines: { menuId: number; quantity: number; option?: string | null }[],
+  lines: { menuId: number; quantity: number; option?: string | null; unitPrice?: number | null }[],
   method: string,
   reference = '',
+  catalog: Record<
+    number,
+    {
+      name: string
+      category: string
+      price: number
+      options?: (string | null)[] | null
+      visible?: boolean
+      available?: boolean
+      deleted?: boolean
+    }
+  > = MENU_PRICES,
 ) => {
   if (method === 'PAYPAL') throw new Error('PAYPAL_NOT_AVAILABLE')
   if (!['CASH', 'GCASH'].includes(method)) throw new Error('INVALID_PAYMENT_METHOD')
@@ -54,28 +66,32 @@ export const priceOrder = (
   if (method === 'GCASH' && !isValidGcashReference(reference))
     throw new Error('GCASH_REFERENCE_INVALID')
   return lines.map((line) => {
-    const item = MENU_PRICES[line.menuId]
+    const item = catalog[line.menuId]
     if (!item) throw new Error('UNKNOWN_ITEM')
+    if (item.deleted || item.visible === false || item.available === false)
+      throw new Error('ITEM_UNAVAILABLE')
+    if (catalog !== MENU_PRICES && line.unitPrice !== item.price)
+      throw new Error('MENU_PRICE_CHANGED')
     if (
       !Number.isInteger(line.quantity) ||
       line.quantity < 1 ||
       line.quantity > MAX_QUANTITY_PER_LINE
     )
       throw new Error('INVALID_QUANTITY')
-    const flavors: Record<string, string> = {
-      blueberry: 'Blueberry',
-      strawberry: 'Strawberry',
-      'green-apple': 'Green Apple',
-      lychee: 'Lychee',
-    }
-    const option = line.option?.toLowerCase().replace(/ /g, '-')
-    if (line.menuId === 5 && (!option || !flavors[option])) throw new Error('INVALID_OPTION')
-    if (line.menuId !== 5 && option) throw new Error('INVALID_OPTION')
+    const choices =
+      item.options ??
+      (catalog === MENU_PRICES && line.menuId === 5
+        ? ['Blueberry', 'Strawberry', 'Green Apple', 'Lychee']
+        : [])
+    const option = line.option?.toLowerCase().trim().replace(/\s+/g, '-')
+    const selected = choices.find((choice) => choice?.toLowerCase().replace(/\s+/g, '-') === option)
+    if ((choices.length && !selected) || (!choices.length && option))
+      throw new Error('INVALID_OPTION')
     return {
       menuId: line.menuId,
       name: item.name,
       category: item.category,
-      option: option ? flavors[option] : null,
+      option: selected || null,
       unitPrice: item.price,
       quantity: line.quantity,
       lineTotal: round2(item.price * line.quantity),

@@ -19,10 +19,15 @@ import { MenuCard } from './MenuCard'
 import { useTranslations } from '../translations'
 
 export const MenuSection = ({ category, setCategory, search, setSearch, searchRef }) => {
-  const { data = [], isPending } = useQuery({
+  const {
+    data = [],
+    isPending,
+    isError,
+    refetch,
+  } = useQuery({
     queryKey: ['menu'],
     queryFn: fetchMenu,
-    refetchInterval: 45 * 60 * 1000,
+    refetchInterval: 30000,
   })
   const colors = useColors(useThemeStore((state) => state.theme))
   const { language, t } = useTranslations()
@@ -88,6 +93,13 @@ export const MenuSection = ({ category, setCategory, search, setSearch, searchRe
       </ScrollView>
       {isPending ? (
         <ActivityIndicator color={colors.primary} size="large" style={styles.loader} />
+      ) : isError ? (
+        <View style={styles.empty}>
+          <Text style={{ color: colors.foreground }}>Unable to load the menu.</Text>
+          <Pressable onPress={() => refetch()}>
+            <Text style={{ color: colors.primary }}>Retry</Text>
+          </Pressable>
+        </View>
       ) : visible.length ? (
         <View style={styles.grid}>
           {visible.map((item) => (

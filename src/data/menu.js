@@ -1,3 +1,5 @@
+import { getUrl } from 'aws-amplify/storage'
+import { dataClient, throwOnErrors } from '../orders/client'
 const chickenPoppersImage = require('../../assets/images/chicken-poppers.png')
 const chickenTocinoImage = require('../../assets/images/chicken-tocino.png')
 const cordonBlueImage = require('../../assets/images/cordon-blue.png')
@@ -77,4 +79,38 @@ const menu = [
 
 export const categories = ['all', 'food', 'drink']
 
-export const fetchMenu = async () => menu
+export const imageForRecord = async (asset) => {
+  if (asset?.path || asset?.imagePath) {
+    try {
+      return {
+        uri: (
+          await getUrl({ path: asset.path || asset.imagePath, options: { expiresIn: 3600 } })
+        ).url.toString(),
+      }
+    } catch {
+      return null
+    }
+  }
+  return menu.find((item) => item.id === asset?.bundledId)?.image || null
+}
+export const fetchMenu = async () => {
+  const items = []
+  let nextToken
+  do {
+    const raw = throwOnErrors(
+      await dataClient.queries.publicMenu({ nextToken }, { authMode: 'iam' }),
+    )
+    const page = typeof raw === 'string' ? JSON.parse(raw) : raw
+    items.push(...(page?.items ?? []))
+    nextToken = page?.nextToken
+  } while (nextToken)
+  return Promise.all(
+    items
+      .sort((a, b) => a.id - b.id)
+      .map(async (item) => ({
+        ...item,
+        options: item.options?.length ? item.options : undefined,
+        image: await imageForRecord(item),
+      })),
+  )
+}

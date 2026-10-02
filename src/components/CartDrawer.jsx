@@ -1,3 +1,4 @@
+import { fetchMenu } from '../data/menu'
 import { useEffect, useRef, useState } from 'react'
 import { useAuthStore } from '../store/useAuthStore'
 import { profileError } from '../auth/validation'
@@ -57,6 +58,7 @@ export const CartDrawer = () => {
   const [step, setStep] = useState('cart')
   const [reference, setReference] = useState('')
   const [error, setError] = useState('')
+  const [updatingCart, setUpdatingCart] = useState(false)
   const [placedOrder, setPlacedOrder] = useState(null)
   const placeOrder = usePlaceOrder()
   const request = useRef({ key: '', id: '' })
@@ -95,9 +97,10 @@ export const CartDrawer = () => {
   }
 
   const submit = (paymentReference = '') => {
+    if (updatingCart || placeOrder.isPending || !cart.length) return
     setError('')
     const key = JSON.stringify({
-      cart: cart.map(({ cartId, quantity }) => ({ cartId, quantity })),
+      cart: cart.map(({ cartId, quantity, price }) => ({ cartId, quantity, price })),
       paymentMethod,
       paymentReference,
       user: useAuthStore.getState().user?.userId,
@@ -129,7 +132,7 @@ export const CartDrawer = () => {
   }
 
   const startCheckout = () => {
-    if (!requireAccount()) return
+    if (updatingCart || !requireAccount()) return
     setError('')
     if (!['cash', 'gcash'].includes(paymentMethod)) {
       setError('orderErrorFailed')
@@ -190,6 +193,27 @@ export const CartDrawer = () => {
           ]}
         />
       </View>
+      {error === 'orderErrorMenuChanged' && (
+        <Pressable
+          disabled={updatingCart}
+          onPress={async () => {
+            setUpdatingCart(true)
+            try {
+              useOrderStore.getState().reconcileCart(await fetchMenu())
+              setError('')
+              setStep('cart')
+            } catch {
+              setError('orderErrorFailed')
+            } finally {
+              setUpdatingCart(false)
+            }
+          }}
+        >
+          <Text style={{ color: colors.primary, padding: 12 }}>
+            {updatingCart ? 'Updating...' : 'Update cart (removes unavailable items)'}
+          </Text>
+        </Pressable>
+      )}
       {!!error && (
         <Text accessibilityRole="alert" accessibilityLiveRegion="assertive" style={styles.error}>
           {t(error)}

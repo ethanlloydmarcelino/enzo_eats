@@ -49,7 +49,7 @@ Signup acknowledges successful account creation only after Cognito accepts the r
 
 Cash and GCash are the only checkout options. Orders are submitted through the `placeOrder` GraphQL mutation. GCash payments go to **0916-408-2529**, and customers must supply their receipt reference before submitting. Both methods wait for an admin or super admin to approve or deny them. PayPal has been removed from the app; the server continues rejecting it even if an older client tries to submit it.
 
-The Lambda reprices menu items using `amplify/functions/shared/checkout.ts`, validates quantities and flavors, and reads the current customer profile from Cognito using the caller's identity. Orders include customer details, line items, PHP totals, payment method/reference, status, timestamps, and a durable transition history. Client request IDs prevent duplicate submissions on retry. Update both the server price table and `src/data/menu.js` when changing the menu.
+The Lambda validates menu prices against the current `MenuItem` records using `amplify/functions/shared/checkout.ts`, validates quantities and flavors, and reads the current customer profile from Cognito using the caller's identity. Orders include customer details, line items, PHP totals, payment method/reference, status, timestamps, and a durable transition history. Client request IDs prevent duplicate submissions on retry. Manage menu items through Account > Manage menu & photos. Checkout rejects changed prices and hidden, unavailable, or deleted items; the customer can refresh their cart before resubmitting.
 
 Only backend functions can write orders. Customers can read their own orders; admin groups can read the queue and call approval and fulfillment mutations. Conditional updates prevent competing decisions from overwriting each other. The shared stepper shows Pending approval, Processing, Ready for pickup, and Done. Initial approval starts Processing immediately; each subsequent stage requires another admin approval, or denial ends the order. Stale-stage approvals are rejected; completion confirms pickup and receipt of cash payment. GCash approval means an admin has checked the reference against the merchant's actual payment records.
 
@@ -61,9 +61,9 @@ Account → Device notifications enables standard Web Push. On iPhone/iPad, inst
 
 The Order DynamoDB stream invokes the web-push Lambda after a saved status change. Pending orders notify current Cognito admins; only Ready for pickup notifies the customer. Other stages, denials, cancellations, and flag edits do not trigger customer notifications. Subscriptions are private, tied to the authenticated Cognito sub, limited to ten devices, and expire after 90 days (enable again to renew). Expired browser endpoints are removed. Sign-out revokes the browser subscription. VAPID keys are initialized in Secrets Manager, never shipped to clients; only the public key is returned. The function runs with concurrency one to serialize key initialization. Failed stream deliveries retry three times and go to the FailedPushEvents SQS queue for inspection. Tags collapse retries on devices, but exactly-once push delivery is not guaranteed. No email/SMS integration is included.
 
-Profile avatars use initials. Photo uploads and the application storage bucket have been removed.
+Profile avatars use initials. User profile photo uploads remain disabled. Menu photo uploads use a dedicated Amplify S3 storage resource.
 
-Menu and hero photos are bundled from assets/images and are available to guests and signed-in users without storage permissions. App icons stay local.
+The existing menu and hero photos remain bundled from assets/images. New menu photos are stored in S3 and readable by guests and signed-in users. Only admins and super admins can upload menu photos; neither group has permanent-delete permission. App icons stay local.
 
 After deployment, refresh the Hosting environment variable using `scripts/set-hosting-outputs.mjs` so hosting sees the current models and notification configuration. Run `npm run test:checkout` for pricing, GCash, PayPal-disabled, and lifecycle checks. Verify the full signup and ordering flow using customer and admin test accounts before accepting real orders.
 
@@ -139,3 +139,13 @@ Admins and super admins can expand **View order activity** on order cards and co
 Signup and profile phone fields support local numbers with country/flag selection for Philippines, USA, Canada, Japan, Singapore, Taiwan, and Dubai/UAE. The client converts numbers to international format before Cognito receives them. The shared password policy requires 8-256 characters without spaces; uppercase, lowercase, digits, and symbols are not individually required. Deploy the backend password policy before publishing the updated forms.
 
 Super admins can permanently delete another Cognito account in **Users & roles** by typing DELETE and confirming. The backend verifies current super-admin membership, blocks self-deletion and stale selections, signs out the target sessions, deletes the identity, and logs the actor and time. Historical orders and receipts are retained. Admins and customers cannot call this operation.
+
+## Menu management
+
+Admins and super admins can open **Account > Manage menu & photos** to add, edit, and delete items, change prices and descriptions, choose photos, hide items, or mark them unavailable. Hidden items are omitted from the customer API; unavailable items stay visible but cannot be ordered. Menu updates use conditional writes to reject stale admin edits. Receipts keep the prices and item details saved when the order was submitted.
+
+The photo library accepts JPEG, PNG, and WebP up to 5 MB through the web app, including mobile browsers. Native apps can select existing library photos; uploading currently requires a browser. Removing or replacing an item photo leaves it in the library for reuse. Deleting a menu item retains its record and photos. Existing menu items initialize automatically once the API is first used; initialization preserves edits and deleted records.
+
+Deploy with `npx ampx sandbox --once --identifier ethan` and sync Hosting outputs before publishing this UI, because it requires the new menu queries, tables, and storage configuration. Run `npx tsx --test tests/menu.test.ts tests/checkout.test.ts` and `node --test tests/menu-catalog.test.mjs tests/admin-order-actions.test.mjs`.
+
+Order approval controls: pending = Deny / Approve; processing = Cancel / Ready; ready = Cancel / Done. Cancellation requires a reason.

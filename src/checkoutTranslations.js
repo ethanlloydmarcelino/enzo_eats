@@ -1,5 +1,8 @@
 export const checkoutTranslations = {
   en: {
+    orderErrorMenuChanged:
+      'The menu has changed. Update your cart, review the total, and submit again.',
+    orderErrorCancellationReason: 'Enter a reason before cancelling the order.',
     orderErrorDenialReason: 'Enter a reason before denying the order.',
     adminInProgress: 'Approved orders in progress',
     advancePREPARING: 'Start preparing',
@@ -16,6 +19,9 @@ export const checkoutTranslations = {
     dismissNotice: 'Dismiss notification',
   },
   tl: {
+    orderErrorMenuChanged:
+      'Nagbago ang menu. I-update ang cart at suriin ang kabuuan bago mag-order muli.',
+    orderErrorCancellationReason: 'Maglagay ng dahilan bago kanselahin ang order.',
     orderErrorDenialReason: 'Maglagay ng dahilan bago tanggihan ang order.',
     adminInProgress: 'Mga aprubadong order',
     advancePREPARING: 'Simulan ang paghahanda',
