@@ -6,7 +6,8 @@ import { uploadData } from 'aws-amplify/storage'
 import { dataClient, throwOnErrors } from '../../orders/client'
 import { imageForRecord } from '../../data/menu'
 import { useAuthStore } from '../../store/useAuthStore'
-import { checkImage } from '../../menu/images.mjs'
+import { thumbnailPath } from '../../menu/images.mjs'
+import { optimizePhoto } from '../../menu/optimizePhoto'
 
 export const MenuImageLibrary = ({ colors, onSelect }) => {
   const { user, role, status } = useAuthStore()
@@ -29,8 +30,13 @@ export const MenuImageLibrary = ({ colors, onSelect }) => {
     setSelecting(true)
     setMessage('')
     try {
-      checkImage(file.type, file.size, new Uint8Array(await file.slice(0, 12).arrayBuffer()))
-      setSelection({ file, url: URL.createObjectURL(file) })
+      const optimized = await optimizePhoto(file)
+      setSelection({
+        file,
+        ...optimized,
+        id: globalThis.crypto.randomUUID(),
+        url: URL.createObjectURL(optimized.main.blob),
+      })
     } catch (error) {
       setMessage(error.message || 'Unable to read this photo. Please choose another.')
     } finally {
@@ -46,7 +52,7 @@ export const MenuImageLibrary = ({ colors, onSelect }) => {
       const data = throwOnErrors(page)
       return {
         data: await Promise.all(
-          data.map(async (asset) => ({ ...asset, image: await imageForRecord(asset) })),
+          data.map(async (asset) => ({ ...asset, image: await imageForRecord(asset, true) })),
         ),
         nextToken: page.nextToken,
       }
@@ -62,23 +68,23 @@ export const MenuImageLibrary = ({ colors, onSelect }) => {
     await cache.invalidateQueries({ queryKey: ['menu-images'] })
     onSelect?.(asset.id)
   }
-  const upload = async (file) => {
-    if (!file || !allowed || busy) return
+  const upload = async () => {
+    if (!selection || !allowed || busy) return
     setBusy(true)
     setMessage('')
     try {
-      const extension = checkImage(
-        file.type,
-        file.size,
-        new Uint8Array(await file.slice(0, 12).arrayBuffer()),
-      )
-      const id = globalThis.crypto.randomUUID()
       const asset = {
-        id,
-        path: 'menu-images/' + id + '.' + extension,
-        label: file.name.slice(0, 150),
+        id: selection.id,
+        path: 'menu-images/optimized/' + selection.id + '/main.webp',
+        label: selection.file.name.replace(/\.[^.]+$/, '').slice(0, 140) + '.webp',
       }
-      await uploadData({ path: asset.path, data: file, options: { contentType: file.type } }).result
+      const options = {
+        contentType: 'image/webp',
+        cacheControl: 'public, max-age=31536000, immutable',
+      }
+      await uploadData({ path: asset.path, data: selection.main.blob, options }).result
+      await uploadData({ path: thumbnailPath(asset.path), data: selection.thumbnail.blob, options })
+        .result
       setPendingAsset(asset)
       await register(asset)
     } catch (error) {
@@ -93,7 +99,8 @@ export const MenuImageLibrary = ({ colors, onSelect }) => {
     <View style={{ gap: 12 }}>
       <Text style={[text, { fontSize: 20, fontWeight: 'bold' }]}>Photo library</Text>
       <Text style={text}>
-        Removing a photo from an item keeps it here for reuse. JPEG, PNG or WebP, up to 5 MB.
+        Removing a photo from an item keeps it here for reuse. JPG, PNG, HEIC or WebP, up to 10 MB.
+        Photos are automatically resized and compressed before saving.
       </Text>
       {Platform.OS === 'web' ? (
         <View
@@ -109,7 +116,7 @@ export const MenuImageLibrary = ({ colors, onSelect }) => {
           {createElement('input', {
             ref: inputRef,
             type: 'file',
-            accept: 'image/jpeg,image/png,image/webp',
+            accept: 'image/jpeg,image/png,image/webp,image/heic,image/heif,.heic,.heif',
             disabled: busy || selecting || !!pendingAsset,
             tabIndex: -1,
             'aria-label': 'Choose menu photo',
@@ -152,7 +159,10 @@ export const MenuImageLibrary = ({ colors, onSelect }) => {
                 {selection.file.name}
               </Text>
               <Text style={{ color: colors.mutedForeground }}>
-                {(selection.file.size / 1024 / 1024).toFixed(2)} MB
+                {selection.main.width} x {selection.main.height} px WebP |{' '}
+                {Math.ceil(selection.main.blob.size / 1024)} KB +{' '}
+                {Math.ceil(selection.thumbnail.blob.size / 1024)} KB thumbnail (original:{' '}
+                {(selection.file.size / 1024 / 1024).toFixed(2)} MB)
               </Text>
             </View>
           )}
@@ -160,7 +170,7 @@ export const MenuImageLibrary = ({ colors, onSelect }) => {
             <Pressable
               accessibilityRole="button"
               disabled={busy || selecting || !!pendingAsset}
-              onPress={() => (selection ? upload(selection.file) : inputRef.current?.click())}
+              onPress={() => (selection ? upload() : inputRef.current?.click())}
               style={{
                 flexDirection: 'row',
                 alignItems: 'center',
@@ -184,7 +194,7 @@ export const MenuImageLibrary = ({ colors, onSelect }) => {
                 {busy
                   ? 'Saving photo...'
                   : selecting
-                    ? 'Preparing preview...'
+                    ? 'Optimizing photo...'
                     : selection
                       ? onSelect
                         ? 'Save & use photo'

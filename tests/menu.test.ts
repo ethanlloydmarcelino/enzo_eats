@@ -64,5 +64,5 @@ test('image uploads reject mislabeled files and oversized files', () => {
   assert.equal(checkImage('image/jpeg', 100, new Uint8Array([255, 216, 255])), 'jpg')
   assert.throws(() => checkImage('image/jpeg', 100, new Uint8Array([60, 115, 118, 103])))
   assert.throws(() => checkImage('image/svg+xml', 100, new Uint8Array([60, 115, 118, 103])))
-  assert.throws(() => checkImage('image/jpeg', 6000000, new Uint8Array([255, 216, 255])))
+  assert.throws(() => checkImage('image/jpeg', 11000000, new Uint8Array([255, 216, 255])))
 })

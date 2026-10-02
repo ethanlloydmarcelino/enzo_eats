@@ -1,3 +1,4 @@
+import { thumbnailPath } from '../menu/images.mjs'
 import { fetchAuthSession } from 'aws-amplify/auth'
 import { getUrl } from 'aws-amplify/storage'
 import { dataClient, throwOnErrors } from '../orders/client'
@@ -80,12 +81,17 @@ const menu = [
 
 export const categories = ['all', 'food', 'drink']
 
-export const imageForRecord = async (asset) => {
+export const imageForRecord = async (asset, thumbnail = false) => {
   if (asset?.path || asset?.imagePath) {
     try {
       return {
         uri: (
-          await getUrl({ path: asset.path || asset.imagePath, options: { expiresIn: 3600 } })
+          await getUrl({
+            path: thumbnail
+              ? thumbnailPath(asset.path || asset.imagePath)
+              : asset.path || asset.imagePath,
+            options: { expiresIn: 3600 },
+          })
         ).url.toString(),
       }
     } catch {
@@ -111,7 +117,7 @@ export const fetchMenu = async () => {
       .map(async (item) => ({
         ...item,
         options: item.options?.length ? item.options : undefined,
-        image: await imageForRecord(item),
+        image: await imageForRecord(item, true),
       })),
   )
 }

@@ -20,3 +20,6 @@ amplifyconfiguration*
 
 # Local generated AWS client configuration; supplied by Hosting at build time.
 /config/
+
+# Generated browser image codecs (prepared during npm install).
+/public/codecs/
