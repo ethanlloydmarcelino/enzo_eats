@@ -43,7 +43,11 @@ const schema = a
       .query()
       .arguments({ nextToken: a.string() })
       .returns(a.json())
-      .authorization((allow) => [allow.guest(), allow.authenticated('identityPool')])
+      .authorization((allow) => [
+        allow.guest(),
+        allow.authenticated('identityPool'),
+        allow.authenticated(),
+      ])
       .handler(a.handler.function(menuCatalog)),
     manageMenu: a
       .mutation()

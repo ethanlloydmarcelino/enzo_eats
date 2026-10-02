@@ -1,3 +1,4 @@
+import { fetchAuthSession } from 'aws-amplify/auth'
 import { getUrl } from 'aws-amplify/storage'
 import { dataClient, throwOnErrors } from '../orders/client'
 const chickenPoppersImage = require('../../assets/images/chicken-poppers.png')
@@ -94,12 +95,12 @@ export const imageForRecord = async (asset) => {
   return menu.find((item) => item.id === asset?.bundledId)?.image || null
 }
 export const fetchMenu = async () => {
+  const session = await fetchAuthSession()
+  const authMode = session.tokens ? 'userPool' : 'iam'
   const items = []
   let nextToken
   do {
-    const raw = throwOnErrors(
-      await dataClient.queries.publicMenu({ nextToken }, { authMode: 'iam' }),
-    )
+    const raw = throwOnErrors(await dataClient.queries.publicMenu({ nextToken }, { authMode }))
     const page = typeof raw === 'string' ? JSON.parse(raw) : raw
     items.push(...(page?.items ?? []))
     nextToken = page?.nextToken

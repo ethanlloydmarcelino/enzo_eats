@@ -5,6 +5,7 @@ export const storage = defineStorage({
     'menu-images/*': [
       allow.guest.to(['read']),
       allow.authenticated.to(['read']),
+      allow.groups(['user']).to(['read']),
       allow.groups(['admin', 'super_admin']).to(['read', 'write']),
     ],
   }),
