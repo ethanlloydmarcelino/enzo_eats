@@ -322,14 +322,20 @@ export default function ManageMenu() {
                         <Pressable
                           disabled={busy}
                           onPress={() => save({ ...item, visible: !item.visible })}
-                          style={button}
+                          style={{
+                            ...button,
+                            backgroundColor: item.visible ? colors.primary : '#59636e',
+                          }}
                         >
                           <Text style={{ color: '#fff' }}>{item.visible ? 'Hide' : 'Show'}</Text>
                         </Pressable>
                         <Pressable
                           disabled={busy}
                           onPress={() => save({ ...item, available: !item.available })}
-                          style={button}
+                          style={{
+                            ...button,
+                            backgroundColor: item.available ? colors.primary : '#b42318',
+                          }}
                         >
                           <Text style={{ color: '#fff' }}>
                             {item.available ? 'Mark unavailable' : 'Mark available'}
