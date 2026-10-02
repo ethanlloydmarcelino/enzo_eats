@@ -82,6 +82,7 @@ const menu = [
 export const categories = ['all', 'food', 'drink']
 
 export const imageForRecord = async (asset, thumbnail = false) => {
+  if (asset?.deleted) return null
   if (asset?.path || asset?.imagePath) {
     try {
       return {

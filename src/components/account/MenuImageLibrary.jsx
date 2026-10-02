@@ -1,7 +1,7 @@
 import { createElement, useEffect, useRef, useState } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { Upload, ImagePlus, Check } from 'lucide-react-native'
-import { ActivityIndicator, Image, Platform, Pressable, Text, View } from 'react-native'
+import { Upload, ImagePlus, Check, Trash2 } from 'lucide-react-native'
+import { ActivityIndicator, Image, Modal, Platform, Pressable, Text, View } from 'react-native'
 import { uploadData } from 'aws-amplify/storage'
 import { dataClient, throwOnErrors } from '../../orders/client'
 import { imageForRecord } from '../../data/menu'
@@ -15,6 +15,8 @@ export const MenuImageLibrary = ({ colors, onSelect }) => {
   const [tokens, setTokens] = useState([undefined])
   const [busy, setBusy] = useState(false)
   const [message, setMessage] = useState('')
+  const [deleteCandidate, setDeleteCandidate] = useState(null)
+  const [deleteError, setDeleteError] = useState('')
   const [pendingAsset, setPendingAsset] = useState(null)
   const [selection, setSelection] = useState(null)
   const [selecting, setSelecting] = useState(false)
@@ -48,7 +50,11 @@ export const MenuImageLibrary = ({ colors, onSelect }) => {
     queryKey: ['menu-images', user?.userId, role, tokens.at(-1)],
     enabled: allowed,
     queryFn: async () => {
-      const page = await dataClient.models.MenuImage.list({ limit: 24, nextToken: tokens.at(-1) })
+      const page = await dataClient.models.MenuImage.list({
+        limit: 24,
+        nextToken: tokens.at(-1),
+        filter: { or: [{ deleted: { eq: false } }, { deleted: { attributeExists: false } }] },
+      })
       const data = throwOnErrors(page)
       return {
         data: await Promise.all(
@@ -93,10 +99,105 @@ export const MenuImageLibrary = ({ colors, onSelect }) => {
       setBusy(false)
     }
   }
+  const deletePhoto = async () => {
+    if (role !== 'super_admin' || !deleteCandidate || busy) return
+    setBusy(true)
+    setDeleteError('')
+    try {
+      throwOnErrors(await dataClient.mutations.deleteMenuPhoto({ imageId: deleteCandidate.id }))
+      setDeleteCandidate(null)
+      setTokens([undefined])
+      setMessage('Photo deleted from the library.')
+      await Promise.all(
+        ['menu-images', 'menu-preview', 'menu'].map((key) =>
+          cache.invalidateQueries({ queryKey: [key] }),
+        ),
+      )
+    } catch (error) {
+      setDeleteError(
+        error.message?.includes('PHOTO_IN_USE')
+          ? 'This photo is used by a menu item. Remove or replace it on that item first, including hidden or unavailable items.'
+          : 'Could not delete the photo. Please try again.',
+      )
+    } finally {
+      setBusy(false)
+    }
+  }
   if (!allowed) return null
   const text = { color: colors.foreground }
   return (
     <View style={{ gap: 12 }}>
+      <Modal
+        visible={role === 'super_admin' && !!deleteCandidate}
+        transparent
+        animationType="fade"
+        onRequestClose={() => {
+          if (!busy) setDeleteCandidate(null)
+        }}
+      >
+        <View
+          style={{
+            flex: 1,
+            justifyContent: 'center',
+            alignItems: 'center',
+            padding: 24,
+            backgroundColor: 'rgba(0,0,0,0.45)',
+          }}
+        >
+          <View
+            accessibilityViewIsModal
+            style={{
+              width: '100%',
+              maxWidth: 420,
+              padding: 24,
+              gap: 16,
+              borderRadius: 18,
+              backgroundColor: colors.card,
+            }}
+          >
+            <Text accessibilityRole="header" style={[text, { fontSize: 22, fontWeight: 'bold' }]}>
+              Delete this photo?
+            </Text>
+            {!!deleteCandidate?.image && (
+              <Image
+                source={deleteCandidate.image}
+                resizeMode="contain"
+                style={{ width: '100%', height: 150, borderRadius: 10 }}
+              />
+            )}
+            <Text style={text}>{deleteCandidate?.label}</Text>
+            <Text style={text}>
+              This permanently removes the photo from the library and deletes its uploaded files,
+              including the thumbnail. This cannot be undone.
+            </Text>
+            {!!deleteError && (
+              <Text accessibilityRole="alert" style={{ color: '#b42318' }}>
+                {deleteError}
+              </Text>
+            )}
+            <View style={{ flexDirection: 'row', justifyContent: 'flex-end', gap: 12 }}>
+              <Pressable
+                accessibilityRole="button"
+                disabled={busy}
+                onPress={() => setDeleteCandidate(null)}
+                style={{ padding: 12 }}
+              >
+                <Text style={text}>Keep photo</Text>
+              </Pressable>
+              <Pressable
+                accessibilityRole="button"
+                disabled={busy}
+                onPress={deletePhoto}
+                style={{ padding: 12, borderRadius: 10, backgroundColor: '#b42318' }}
+              >
+                <Text style={{ color: '#fff', fontWeight: 'bold' }}>
+                  {busy ? 'Deleting...' : 'Delete photo'}
+                </Text>
+              </Pressable>
+            </View>
+          </View>
+        </View>
+      </Modal>
       <Text style={[text, { fontSize: 20, fontWeight: 'bold' }]}>Photo library</Text>
       <Text style={text}>
         Removing a photo from an item keeps it here for reuse. JPG, PNG, HEIC or WebP, up to 10 MB.
@@ -289,6 +390,21 @@ export const MenuImageLibrary = ({ colors, onSelect }) => {
             <Text numberOfLines={2} style={text}>
               {asset.label}
             </Text>
+            {role === 'super_admin' && (
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel={'Delete photo ' + asset.label}
+                disabled={busy || selecting}
+                onPress={() => {
+                  setDeleteError('')
+                  setDeleteCandidate(asset)
+                }}
+                style={{ padding: 8, flexDirection: 'row', alignItems: 'center', gap: 6 }}
+              >
+                <Trash2 size={16} color="#b42318" />
+                <Text style={{ color: '#b42318' }}>Delete photo</Text>
+              </Pressable>
+            )}
             {onSelect && (
               <Pressable
                 disabled={busy}

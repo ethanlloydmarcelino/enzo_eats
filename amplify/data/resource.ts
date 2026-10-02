@@ -37,8 +37,15 @@ const schema = a
         label: a.string().required(),
         path: a.string(),
         bundledId: a.integer(),
+        deleted: a.boolean(),
       })
       .authorization((allow) => [allow.groups(['admin', 'super_admin']).to(['read', 'create'])]),
+    deleteMenuPhoto: a
+      .mutation()
+      .arguments({ imageId: a.string().required() })
+      .returns(a.json())
+      .authorization((allow) => [allow.groups(['super_admin'])])
+      .handler(a.handler.function(menuCatalog)),
     publicMenu: a
       .query()
       .arguments({ nextToken: a.string() })

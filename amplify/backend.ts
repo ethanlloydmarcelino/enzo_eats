@@ -107,3 +107,6 @@ backend.reviewOrder.resources.lambda.addToRolePolicy(
     resources: [backend.auth.resources.userPool.userPoolArn],
   }),
 )
+
+backend.menuCatalog.addEnvironment('MENU_BUCKET_NAME', backend.storage.resources.bucket.bucketName)
+backend.storage.resources.bucket.grantDelete(backend.menuCatalog.resources.lambda, 'menu-images/*')

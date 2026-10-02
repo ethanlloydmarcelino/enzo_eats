@@ -1,3 +1,5 @@
+import { S3Client, DeleteObjectsCommand } from '@aws-sdk/client-s3'
+import { deleteMenuPhoto } from './delete-photo'
 import { randomInt } from 'node:crypto'
 import { Amplify } from 'aws-amplify'
 import { generateClient } from 'aws-amplify/data'
@@ -12,9 +14,15 @@ Amplify.configure(resourceConfig, libraryOptions)
 const client = generateClient<Schema>()
 let initialized = false
 export const handler = async (
-  event: AppSyncResolverEvent<{ action?: string; input?: unknown; nextToken?: string }>,
+  event: AppSyncResolverEvent<{
+    action?: string
+    input?: unknown
+    nextToken?: string
+    imageId?: string
+  }>,
 ) => {
-  const { action } = event.arguments
+  const action =
+    event.info?.fieldName === 'deleteMenuPhoto' ? 'DELETE_PHOTO' : event.arguments.action
   const identity = event.identity as AppSyncIdentityCognito
   if (
     action &&
@@ -23,6 +31,22 @@ export const handler = async (
     )
   )
     throw new Error('NOT_AUTHORIZED')
+  if (action === 'DELETE_PHOTO') {
+    return deleteMenuPhoto(
+      client.models,
+      identity?.claims?.['cognito:groups'] ?? [],
+      event.arguments.imageId,
+      async (keys) => {
+        const result = await new S3Client({}).send(
+          new DeleteObjectsCommand({
+            Bucket: process.env.MENU_BUCKET_NAME!,
+            Delete: { Objects: keys.map((Key) => ({ Key })) },
+          }),
+        )
+        if (result.Errors?.length) throw new Error('PHOTO_DELETE_FAILED')
+      },
+    )
+  }
   if (!initialized) {
     await ensureMenuDefaults(client.models)
     initialized = true
@@ -47,14 +71,12 @@ export const handler = async (
           price: item.price,
           category: item.category,
           available: item.available,
-          imagePath: image?.data?.path,
-          bundledId: image?.data?.bundledId,
-          options: item.options
-            ?.filter(Boolean)
-            .map((name) => ({
-              id: name!.toLowerCase().replace(/\s+/g, '-'),
-              name: { en: name, tl: name },
-            })),
+          imagePath: image?.data?.deleted ? null : image?.data?.path,
+          bundledId: image?.data?.deleted ? null : image?.data?.bundledId,
+          options: item.options?.filter(Boolean).map((name) => ({
+            id: name!.toLowerCase().replace(/\s+/g, '-'),
+            name: { en: name, tl: name },
+          })),
         }
       }),
     )
@@ -82,7 +104,8 @@ export const handler = async (
       : { ...validateMenu(input), deleted: false }
   if ('imageAssetId' in values && values.imageAssetId) {
     const asset = await client.models.MenuImage.get({ id: values.imageAssetId })
-    if (asset.errors?.length || !asset.data) throw new Error('IMAGE_NOT_FOUND')
+    if (asset.errors?.length || !asset.data || asset.data.deleted)
+      throw new Error('IMAGE_NOT_FOUND')
   }
   const record = { id, ...values, updatedBy: identity.sub || identity.claims.sub }
   if (existing?.data) {
