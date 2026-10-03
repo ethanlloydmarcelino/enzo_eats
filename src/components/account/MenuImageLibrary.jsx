@@ -17,6 +17,7 @@ export const MenuImageLibrary = ({ colors, onSelect }) => {
   const [message, setMessage] = useState('')
   const [deleteCandidate, setDeleteCandidate] = useState(null)
   const [deleteError, setDeleteError] = useState('')
+  const [removedIds, setRemovedIds] = useState([])
   const [pendingAsset, setPendingAsset] = useState(null)
   const [selection, setSelection] = useState(null)
   const [selecting, setSelecting] = useState(false)
@@ -104,7 +105,12 @@ export const MenuImageLibrary = ({ colors, onSelect }) => {
     setBusy(true)
     setDeleteError('')
     try {
-      throwOnErrors(await dataClient.mutations.deleteMenuPhoto({ imageId: deleteCandidate.id }))
+      const raw = throwOnErrors(
+        await dataClient.mutations.deleteMenuPhoto({ imageId: deleteCandidate.id }),
+      )
+      const result = typeof raw === 'string' ? JSON.parse(raw) : raw
+      if (result?.deleted !== true) throw new Error('PHOTO_DELETE_NOT_CONFIRMED')
+      setRemovedIds((ids) => [...ids, deleteCandidate.id])
       setDeleteCandidate(null)
       setTokens([undefined])
       setMessage('Photo deleted from the library.')
@@ -123,6 +129,7 @@ export const MenuImageLibrary = ({ colors, onSelect }) => {
       setBusy(false)
     }
   }
+  const libraryPhotos = (query.data?.data ?? []).filter((asset) => !removedIds.includes(asset.id))
   if (!allowed) return null
   const text = { color: colors.foreground }
   return (
@@ -361,7 +368,7 @@ export const MenuImageLibrary = ({ colors, onSelect }) => {
       {query.isPending && (
         <ActivityIndicator color={colors.primary} accessibilityLabel="Loading photos" />
       )}
-      {!query.isPending && !query.isError && !query.data?.data?.length && (
+      {!query.isPending && !query.isError && !libraryPhotos.length && (
         <Text style={{ color: colors.mutedForeground }}>Your saved photos will appear here.</Text>
       )}
       {query.isError && (
@@ -370,7 +377,7 @@ export const MenuImageLibrary = ({ colors, onSelect }) => {
         </Pressable>
       )}
       <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 12 }}>
-        {(query.data?.data ?? []).map((asset) => (
+        {libraryPhotos.map((asset) => (
           <View
             key={asset.id}
             style={{

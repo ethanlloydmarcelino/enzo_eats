@@ -19,10 +19,12 @@ export const handler = async (
     input?: unknown
     nextToken?: string
     imageId?: string
-  }>,
+  }> & { fieldName?: string },
 ) => {
   const action =
-    event.info?.fieldName === 'deleteMenuPhoto' ? 'DELETE_PHOTO' : event.arguments.action
+    (event.fieldName ?? event.info?.fieldName) === 'deleteMenuPhoto'
+      ? 'DELETE_PHOTO'
+      : event.arguments.action
   const identity = event.identity as AppSyncIdentityCognito
   if (
     action &&

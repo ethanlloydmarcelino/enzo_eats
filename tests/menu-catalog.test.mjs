@@ -21,6 +21,7 @@ async function setup() {
     models: {
       MenuItem: {
         list: async (input) => {
+          if (input.filter.imageAssetId) return { data: [] }
           assert.equal(input.filter.visible.eq, true)
           assert.equal(input.filter.deleted.eq, false)
           return { data: [row], nextToken: 'more' }
@@ -31,7 +32,13 @@ async function setup() {
           return { data: input }
         },
       },
-      MenuImage: { get: async () => ({ data: { id: 'photo', path: 'menu-images/photo.png' } }) },
+      MenuImage: {
+        get: async () => ({ data: { id: 'photo', path: 'menu-images/photo.png' } }),
+        update: async (input) => {
+          writes.push(input)
+          return { data: input }
+        },
+      },
     },
     graphql: async (input) => {
       writes.push(input.variables)
@@ -44,8 +51,28 @@ async function setup() {
       .replace(/^import .*$/gm, ''),
     { compilerOptions: { target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.CommonJS } },
   ).outputText
+  const deletion = { exports: {} }
+  vm.runInNewContext(
+    ts.transpileModule(fs.readFileSync('amplify/functions/menu-catalog/delete-photo.ts', 'utf8'), {
+      compilerOptions: { target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.CommonJS },
+    }).outputText,
+    deletion,
+  )
   const handler = await vm.runInNewContext('(async()=>{' + code + ';return exports.handler})()', {
     exports: {},
+    deleteMenuPhoto: deletion.exports.deleteMenuPhoto,
+    process: { env: { MENU_BUCKET_NAME: 'test-bucket' } },
+    DeleteObjectsCommand: class {
+      constructor(input) {
+        this.input = input
+      }
+    },
+    S3Client: class {
+      async send(command) {
+        writes.push(command.input)
+        return {}
+      }
+    },
     randomInt: () => 1001,
     Amplify: { configure() {} },
     generateClient: () => client,
@@ -93,4 +120,33 @@ test('stale menu edits fail before writing', async () => {
     /MENU_CHANGED_REFRESH/,
   )
   assert.equal(writes.length, 0)
+})
+
+test('actual Amplify top-level fieldName dispatches photo deletion, not public menu', async () => {
+  const { handler, writes } = await setup()
+  const result = await handler({
+    typeName: 'Mutation',
+    fieldName: 'deleteMenuPhoto',
+    arguments: { imageId: 'photo' },
+    identity: { claims: { 'cognito:groups': ['super_admin'] } },
+  })
+  assert.equal(result.deleted, true)
+  assert.equal(result.items, undefined)
+  assert.equal(writes[0].Delete.Objects[0].Key, 'menu-images/photo.png')
+  assert.equal(writes[1].deleted, true)
+})
+test('actual photo mutation event denies admins and users before any write', async () => {
+  for (const role of ['admin', 'user']) {
+    const { handler, writes } = await setup()
+    await assert.rejects(
+      handler({
+        typeName: 'Mutation',
+        fieldName: 'deleteMenuPhoto',
+        arguments: { imageId: 'photo' },
+        identity: { claims: { 'cognito:groups': [role] } },
+      }),
+      /NOT_AUTHORIZED/,
+    )
+    assert.equal(writes.length, 0)
+  }
 })
