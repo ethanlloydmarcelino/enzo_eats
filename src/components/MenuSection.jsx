@@ -3,6 +3,7 @@ import { Search } from 'lucide-react-native'
 import { useMemo } from 'react'
 import {
   ActivityIndicator,
+  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -73,7 +74,7 @@ export const MenuSection = ({ category, setCategory, search, setSearch, searchRe
       </View>
       <ScrollView
         horizontal
-        showsHorizontalScrollIndicator={false}
+        showsHorizontalScrollIndicator={Platform.OS === 'web'}
         contentContainerStyle={styles.categories}
       >
         {categories.map((name) => {

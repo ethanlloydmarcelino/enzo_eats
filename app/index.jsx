@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react'
-import { ScrollView, StyleSheet, View } from 'react-native'
+import { Platform, ScrollView, StyleSheet, View } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { Header } from '../src/components/Header'
 import { Hero } from '../src/components/Hero'
@@ -30,7 +30,7 @@ const HomeScreen = () => {
       <ScrollView
         ref={scrollRef}
         keyboardShouldPersistTaps="handled"
-        showsVerticalScrollIndicator={false}
+        showsVerticalScrollIndicator={Platform.OS === 'web'}
         contentContainerStyle={styles.scrollContent}
       >
         <Hero onOrder={openMenu} />

@@ -75,7 +75,7 @@ const AccountHome = () => {
   }
 
   return (
-    <AccountScreen title={t('account')}>
+    <AccountScreen title={t('account')} backFallback="/">
       <View style={[styles.identity, { backgroundColor: colors.muted }]}>
         <Avatar attributes={attributes} size={68} />
         <View style={styles.identityCopy}>

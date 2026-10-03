@@ -1,7 +1,15 @@
 import { useCallback, useEffect } from 'react'
 import { ChevronLeft } from 'lucide-react-native'
 import { router, useFocusEffect } from 'expo-router'
-import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native'
+import {
+  ActivityIndicator,
+  Platform,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+} from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { fonts } from '../../fonts'
 import { useAuthStore } from '../../store/useAuthStore'
@@ -13,7 +21,13 @@ import { useTranslations } from '../../translations'
  * Chrome shared by every account page: a back bar, the title, and the guard that
  * bounces a signed-out visitor home with the sign-in sheet already open.
  */
-export const AccountScreen = ({ title, subtitle, children, scroll = true }) => {
+export const AccountScreen = ({
+  title,
+  subtitle,
+  children,
+  scroll = true,
+  backFallback = '/account',
+}) => {
   const status = useAuthStore((state) => state.status)
   const openAccount = useAuthStore((state) => state.openAccount)
   const colors = useColors(useThemeStore((state) => state.theme))
@@ -34,7 +48,7 @@ export const AccountScreen = ({ title, subtitle, children, scroll = true }) => {
     }, [status]),
   )
 
-  const back = () => (router.canGoBack() ? router.back() : router.replace('/account'))
+  const back = () => (router.canGoBack() ? router.back() : router.replace(backFallback))
 
   const body =
     status === 'signedIn' ? (
@@ -75,7 +89,7 @@ export const AccountScreen = ({ title, subtitle, children, scroll = true }) => {
         <ScrollView
           keyboardShouldPersistTaps="handled"
           contentContainerStyle={styles.content}
-          showsVerticalScrollIndicator={false}
+          showsVerticalScrollIndicator={Platform.OS === 'web'}
         >
           {body}
         </ScrollView>
