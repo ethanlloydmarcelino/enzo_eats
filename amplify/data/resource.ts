@@ -14,8 +14,10 @@ import { manageUsers } from '../functions/manage-users/resource'
 
 const schema = a
   .schema({
-    // Retain the existing sandbox table while adding the real order models.
-    Todo: a.model({ content: a.string() }).authorization((allow) => [allow.guest()]),
+    // Preserve the unused legacy table and its data; restrict access to staff.
+    Todo: a
+      .model({ content: a.string() })
+      .authorization((allow) => [allow.groups(['admin', 'super_admin'])]),
     MenuItem: a
       .model({
         name: a.string().required(),
